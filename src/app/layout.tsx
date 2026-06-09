@@ -57,6 +57,9 @@ export const metadata: Metadata = {
   alternates: {
     canonical: "/",
   },
+  verification: {
+    google: "google-site-verification-id-placeholder", // Replace with your Google Search Console verification ID
+  },
   openGraph: {
     title: "Nutri Dates | Sip The Strength — India's Premium Dates Nutrition Powder",
     description:
@@ -193,6 +196,22 @@ export default function RootLayout({
       className={`${inter.variable} h-full antialiased`}
     >
       <head>
+        {/* Google Analytics 4 (GA4) Placeholder Setup */}
+        {/* To activate, uncomment the script tags below and replace G-XXXXXXXXXX with your Measurement ID */}
+        {/*
+        <script async src="https://www.googletagmanager.com/gtag/js?id=G-XXXXXXXXXX"></script>
+        <script
+          dangerouslySetInnerHTML={{
+            __html: `
+              window.dataLayer = window.dataLayer || [];
+              function gtag(){dataLayer.push(arguments);}
+              gtag('js', new Date());
+              gtag('config', 'G-XXXXXXXXXX');
+            `,
+          }}
+        />
+        */}
+
         {/* JSON-LD Structured Data for SEO */}
         <script
           type="application/ld+json"

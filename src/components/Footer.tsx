@@ -31,8 +31,9 @@ export default function Footer() {
             <ul className="space-y-3">
               {[
                 { label: 'Home', href: '/' },
-                { label: 'About', href: '#order' },
-                { label: 'Contact', href: '#order' },
+                { label: 'About Us', href: '/about' },
+                { label: 'Delivery Locations', href: '/locations' },
+                { label: 'Health Journal (Blog)', href: '/blog' },
               ].map((link) => (
                 <li key={link.label}>
                   <Link
@@ -121,7 +122,20 @@ export default function Footer() {
           <p className="text-sm font-semibold text-stone-400">
             Crafted with passion in Hazaribagh, Jharkhand
           </p>
-          <p className="text-xs text-stone-500">
+          <div className="flex flex-wrap justify-center gap-4 text-xs font-bold text-stone-500 mt-2">
+            <Link href="/privacy-policy" className="hover:text-[#FF5000] transition-colors">
+              Privacy Policy
+            </Link>
+            <span>•</span>
+            <Link href="/terms-conditions" className="hover:text-[#FF5000] transition-colors">
+              Terms & Conditions
+            </Link>
+            <span>•</span>
+            <Link href="/disclaimer" className="hover:text-[#FF5000] transition-colors">
+              Nutritional Disclaimer
+            </Link>
+          </div>
+          <p className="text-xs text-stone-500 mt-2">
             © 2024 Nutri Dates. All rights reserved.
           </p>
           <p className="text-xs font-semibold text-stone-500">
