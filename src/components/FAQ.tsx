@@ -5,32 +5,32 @@ import { motion, AnimatePresence } from 'framer-motion';
 
 const faqs = [
   {
-    q: 'What is Nutri Dates?',
-    a: 'Nutri Dates is a chocolate dates nutrition powder made with real dates, oats, dry fruits, and cocoa. It is a healthier and tastier alternative to traditional sugary drink mixes.',
+    q: 'What are the main ingredients in Nutri Dates?',
+    a: 'Nutri Dates contains only four natural, clean ingredients: dehydrated premium dates, pure cocoa powder, rolled oats, and mixed dry fruits (almonds, cashews, pistachios). It contains zero refined sugar, zero preservatives, and zero chemical fillers.',
   },
   {
-    q: 'How do I prepare it?',
-    a: 'Simply mix 15g of Nutri Dates with 200ml of milk or water and shake well. Your nutritious chocolate drink is ready in under 60 seconds.',
+    q: 'Does Nutri Dates contain added refined sugar?',
+    a: 'No, Nutri Dates contains 0% added refined sugar. All sweetness is derived naturally from dehydrated whole dates, making it an excellent replacement for sugary drink mixes.',
   },
   {
-    q: 'What is the shelf life?',
-    a: 'Nutri Dates has a shelf life of 60 days. Store in a cool, dry place away from direct sunlight.',
+    q: 'Is dates powder safe for toddlers and kids?',
+    a: 'Yes, dates powder is a whole food ingredient made by grinding dehydrated dates, making it completely safe and highly recommended for children as an alternative to sugary commercial chocolate mixes.',
   },
   {
-    q: 'How many servings are in one pack?',
-    a: 'Each 250g pack contains approximately 16 servings of 15g each.',
+    q: 'Can I use Nutri Dates as a pre-workout drink?',
+    a: 'Yes! The combination of quick-release natural sugars from dates (for glycogen replenishment) and slow-release energy from complex oats makes it a perfect natural pre-workout fuel.',
   },
   {
-    q: 'How should I store it?',
-    a: 'Store in a cool, dry place. Keep the pack sealed after each use. Avoid exposure to moisture and direct sunlight.',
+    q: 'Can diabetic patients consume Nutri Dates?',
+    a: 'Dates have a low-to-medium Glycemic Index (GI) and do not spike blood sugar like refined white sugar. However, diabetic patients should track their daily carb allowance and consult their dietician.',
   },
   {
-    q: 'Do you offer shipping across India?',
-    a: 'Yes, we ship across India. Standard orders are typically delivered within 5-7 business days. We offer free shipping on all orders.',
+    q: 'Do you offer shipping across India and Jharkhand?',
+    a: 'Yes, we ship express across India directly from our facility in Hazaribagh, Jharkhand. Standard shipping takes 1-2 days inside Jharkhand/Bihar, and 3-5 business days for other states.',
   },
   {
-    q: 'Is it suitable for children?',
-    a: 'Yes! Nutri Dates is made with natural ingredients and is suitable for children above 3 years of age. It makes a great alternative to sugary chocolate drinks.',
+    q: 'What is the shelf life of Nutri Dates powder?',
+    a: 'Nutri Dates has a shelf life of 6 months. Since it contains no artificial preservatives or stabilizers, keep it sealed in a cool, dry place away from moisture.',
   },
 ];
 
@@ -57,8 +57,26 @@ export default function FAQ() {
     setOpenIndex((prev) => (prev === index ? null : index));
   };
 
+  const faqPageJsonLd = {
+    "@context": "https://schema.org",
+    "@type": "FAQPage",
+    "mainEntity": faqs.map((faq) => ({
+      "@type": "Question",
+      "name": faq.q,
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": faq.a
+      }
+    }))
+  };
+
   return (
     <section className="bg-white py-20 md:py-28 px-6 border-b border-[#E3DCD5]">
+      {/* Dynamic FAQ Schema */}
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(faqPageJsonLd) }}
+      />
       <div className="max-w-3xl mx-auto">
         {/* Heading */}
         <motion.div

@@ -36,6 +36,30 @@ const blogPosts = [
     date: 'June 7, 2026',
     readTime: '3 min read',
   },
+  {
+    slug: 'maltodextrin-gut-health-risks',
+    title: 'Why Maltodextrin in Your Health Mix is Damaging Your Kid\'s Gut',
+    summary: 'Many health drinks use maltodextrin as a cheap filler. Read the scientific research explaining how it alters gut bacteria and spikes glycemic levels.',
+    category: 'Nutrition',
+    date: 'June 6, 2026',
+    readTime: '6 min read',
+  },
+  {
+    slug: 'dates-vs-white-sugar-glycemic-index',
+    title: 'Dates vs. White Sugar: A Glycemic Index Comparison for Daily Energy',
+    summary: 'Analyze how natural simple sugars paired with plant fiber in dates ensure a slow insulin response compared to refined cane sugar.',
+    category: 'Wellness',
+    date: 'June 5, 2026',
+    readTime: '4 min read',
+  },
+  {
+    slug: 'bournvita-replacement-guide',
+    title: 'Replacing Sugary Milk Additives: A Parent\'s Transition Guide for Kids',
+    summary: 'Struggling to get your picky child off sugary chocolate powders? Follow our practical, step-by-step guide to transition to clean nutrition.',
+    category: 'Healthy Living',
+    date: 'June 4, 2026',
+    readTime: '5 min read',
+  },
 ];
 
 export default function BlogHub() {

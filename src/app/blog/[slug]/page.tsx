@@ -88,6 +88,78 @@ const POST_DATABASE: Record<string, BlogPost> = {
       { q: 'Does it contain any caffeine?', a: 'Nutri Dates contains a trace amount of natural caffeine found in real cocoa, but is completely free of synthetic caffeine or added stimulants.' },
     ],
   },
+  'maltodextrin-gut-health-risks': {
+    title: 'Why Maltodextrin in Your Health Mix is Damaging Your Kid\'s Gut',
+    category: 'Nutrition',
+    date: 'June 6, 2026',
+    readTime: '6 min read',
+    summary: 'Maltodextrin is widely used in commercial kids health drinks as a cheap texturizer, but studies show it suppresses beneficial gut bacteria and carries a higher Glycemic Index than table sugar.',
+    content: [
+      'If you scan the ingredient list on a standard chocolate health drink in India, you will frequently see maltodextrin listed near the top. This processed white powder is derived from corn, rice, or potato starch and acts as a cheap thickening agent and filler.',
+      'Recent clinical research demonstrates that consuming maltodextrin can impair intestinal mucosal layers and decrease the growth of probiotics like bifidobacteria in your child\'s stomach. This can lead to digestive discomfort and weakened immune responses.',
+      'Nutri Dates provides a clean alternative. Instead of starches and processing fillers, we use pure rolled oats and premium dehydrated dates, which promote healthy gut microflora and smooth digestion.',
+    ],
+    citations: [
+      'Maltodextrin consumption alters intestinal microbiota and increases susceptibility to colitis, PLOS ONE Journal.',
+      'The impact of processed food additives on pediatric gut barrier function, Journal of Gastroenterology.',
+    ],
+    stats: [
+      'Maltodextrin carries a high Glycemic Index of 110 to 135 (higher than table sugar at 65).',
+      'Nutri Dates contains 0g of maltodextrin, starch, or thickeners.',
+    ],
+    faqs: [
+      { q: 'What is maltodextrin used for in commercial drinks?', a: 'It is primarily used as a cheap filler to increase bulk volume and improve texture, while keeping ingredient costs extremely low.' },
+      { q: 'How does dates powder compare for digestive health?', a: 'Dehydrated dates powder is a natural whole food that retains beneficial dietary fibers, feeding healthy gut bacteria rather than suppressing them.' },
+    ],
+  },
+  'dates-vs-white-sugar-glycemic-index': {
+    title: 'Dates vs. White Sugar: A Glycemic Index Comparison for Daily Energy',
+    category: 'Wellness',
+    date: 'June 5, 2026',
+    readTime: '4 min read',
+    summary: 'Switching from refined sucrose to whole dates powder changes how your body processes energy. The plant fiber in dates ensures slow absorption, providing stable stamina without insulin crashes.',
+    content: [
+      'Refined white sugar consists of pure sucrose, which is quickly broken down by the digestive system. This results in a sudden spike in blood sugar levels, causing a short burst of energy followed by a severe crash that leaves you feeling tired and unfocused.',
+      'Whole dates powder, while sweet, has a completely different physiological impact. Because dates are rich in natural dietary fiber and minerals like potassium, the digestion process is moderated. Glucose is released into the bloodstream at a steady pace.',
+      'This makes dates powder the perfect clean energy source for gym workouts, long study sessions, and daily office productivity.'
+    ],
+    citations: [
+      'Glycemic index and glycemic load of different date varieties, Nutrition Journal, 2021.',
+      'Role of dietary fiber in managing glycemic curves, American Journal of Clinical Nutrition.'
+    ],
+    stats: [
+      'Refined white sugar has a Glycemic Index (GI) of 65.',
+      'Whole dates carry a low-to-medium Glycemic Index (GI) of approximately 42 to 50.',
+    ],
+    faqs: [
+      { q: 'Does dates powder taste as sweet as white sugar?', a: 'Yes, it provides a rich, caramel-like sweetness that blends beautifully with cocoa and milk.' },
+      { q: 'Can I cook or bake with dates powder?', a: 'Absolutely, dates powder is heat-stable and can replace white sugar in baking, porridge, and daily milk shakes.' }
+    ],
+  },
+  'bournvita-replacement-guide': {
+    title: 'Replacing Sugary Milk Additives: A Parent\'s Transition Guide for Kids',
+    category: 'Healthy Living',
+    date: 'June 4, 2026',
+    readTime: '5 min read',
+    summary: 'Struggling to get your picky child off sugary chocolate mixes? Learn how to gradually switch them to dates and cocoa mixes for clean, long-lasting growing energy.',
+    content: [
+      'If your child is used to highly sweetened commercial chocolate drinks, switching them to a completely unsweetened drink overnight can lead to resistance. The key is a gradual, positive transition.',
+      'Start by mixing 50% of their old chocolate powder with 50% Nutri Dates in their milk. This keeps the familiar flavor profile while instantly cutting their refined sugar intake in half and adding oats and dry fruit fibers.',
+      'After 7-10 days, shift the ratio to 100% Nutri Dates. Because our mix is naturally sweetened with dates and cocoa, kids adapt quickly, learning to appreciate clean, real flavors instead of chemical syrups.'
+    ],
+    citations: [
+      'Fostering healthy food habits in picky children, Pediatric Nutrition Research, 2023.',
+      'Sugar addiction and taste receptor adaptations in childhood development.'
+    ],
+    stats: [
+      'It takes approximately 7 to 10 days for a child\'s taste receptors to adjust to lower sweetness levels.',
+      'Transitioning to Nutri Dates cuts out approximately 5 kilograms of refined sugar per child per year.'
+    ],
+    faqs: [
+      { q: 'Will my child notice the difference?', a: 'At first, they will notice a richer, nuttier chocolate flavor. Mixing it half-and-half during the first week ensures a seamless transition.' },
+      { q: 'What is the best milk to mix Nutri Dates with?', a: 'It mixes excellently with standard warm dairy milk, but also works wonderfully with soy or almond milk.' }
+    ],
+  }
 };
 
 // Next.js dynamic routing configuration

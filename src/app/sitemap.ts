@@ -27,6 +27,9 @@ export default function sitemap(): MetadataRoute.Sitemap {
     'benefits-dates-chocolate-milk',
     'healthy-drinks-without-refined-sugar-kids',
     'natural-daily-energy-boosters-busy-schedule',
+    'maltodextrin-gut-health-risks',
+    'dates-vs-white-sugar-glycemic-index',
+    'bournvita-replacement-guide',
   ];
 
   const sitemapEntries: MetadataRoute.Sitemap = [];

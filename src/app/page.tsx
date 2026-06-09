@@ -19,6 +19,7 @@ import StickyBuyBar from "@/components/StickyBuyBar";
 import CheckoutModal from "@/components/CheckoutModal";
 import GeoIPBanner from "@/components/GeoIPBanner";
 import AmbassadorSection from "@/components/AmbassadorSection";
+import ProductComparison from "@/components/ProductComparison";
 
 export default function Home() {
   const [isCheckoutOpen, setIsCheckoutOpen] = useState(false);
@@ -70,6 +71,9 @@ export default function Home() {
 
       {/* Section 5: Ingredient Story */}
       <IngredientStory />
+
+      {/* Comparison Table (Google SGE / SEO Optimized) */}
+      <ProductComparison />
 
       {/* Section 6: Why Nutri Dates */}
       <WhyNutriDates />
