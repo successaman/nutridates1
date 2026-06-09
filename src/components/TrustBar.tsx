@@ -8,7 +8,7 @@ const badges = [
   { label: 'No Refined Sugar', desc: 'Naturally sweetened' },
   { label: '16 Servings', desc: '15g daily serving' },
   { label: '250g Pack', desc: 'Perfect shelf life' },
-  { label: 'Made In India', desc: 'Sourced from Hazaribagh' },
+  { label: 'Pan-India Shipping', desc: 'Express dispatch from Hazaribagh' },
 ] as const;
 
 const containerVariants = {

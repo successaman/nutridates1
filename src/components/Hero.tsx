@@ -119,7 +119,7 @@ export default function Hero() {
             variants={itemVariants}
             className="mt-6 max-w-md text-base font-semibold leading-relaxed text-[#3A2415] md:max-w-lg md:text-lg"
           >
-            A Date-Based Nutrition Drink Made With Real Ingredients, Rich Taste and Everyday Energy Support. No Refined Sugar Added.
+            Nutri Dates is India&apos;s premium Date-Based Chocolate Nutrition Powder made with real dates, rich cocoa, oats, and dry fruits. The perfect natural health drink for kids and adults, providing clean daily energy without any added refined sugar.
           </motion.p>
 
           {/* Pricing Info */}

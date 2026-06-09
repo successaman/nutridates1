@@ -17,6 +17,8 @@ import FinalCTA from "@/components/FinalCTA";
 import Footer from "@/components/Footer";
 import StickyBuyBar from "@/components/StickyBuyBar";
 import CheckoutModal from "@/components/CheckoutModal";
+import GeoIPBanner from "@/components/GeoIPBanner";
+import AmbassadorSection from "@/components/AmbassadorSection";
 
 export default function Home() {
   const [isCheckoutOpen, setIsCheckoutOpen] = useState(false);
@@ -51,6 +53,9 @@ export default function Home() {
 
   return (
     <main>
+      {/* Dynamic Geo-Targeting Banner */}
+      <GeoIPBanner />
+
       {/* Section 1: Hero */}
       <Hero />
 
@@ -84,10 +89,13 @@ export default function Home() {
       {/* Section 11: Customer Reviews */}
       <Reviews />
 
-      {/* Section 12: FAQ */}
+      {/* Section 12: Ambassador Program Section */}
+      <AmbassadorSection />
+
+      {/* Section 13: FAQ */}
       <FAQ />
 
-      {/* Section 13: Final CTA */}
+      {/* Section 14: Final CTA */}
       <FinalCTA />
 
       {/* Footer */}
