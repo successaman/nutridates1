@@ -74,9 +74,9 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
   ];
 
   return (
-    <div className="min-h-screen flex flex-col md:flex-row bg-[#F9F7F5] font-sans">
+    <div className="min-h-screen flex flex-col md:flex-row bg-[#F9F7F5] font-sans print:bg-white">
       {/* Admin Sidebar */}
-      <aside className="w-full md:w-64 shrink-0 bg-[#2B1D14] text-white border-b-4 md:border-b-0 md:border-r-4 border-black flex flex-col justify-between">
+      <aside className="w-full md:w-64 shrink-0 bg-[#2B1D14] text-white border-b-4 md:border-b-0 md:border-r-4 border-black flex flex-col justify-between print:hidden">
         <div>
           {/* Logo Brand area */}
           <div className="p-6 border-b-2 border-black flex items-center justify-between">
@@ -135,7 +135,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
       </aside>
 
       {/* Main Admin Content area */}
-      <main className="flex-1 p-6 md:p-10 overflow-y-auto max-w-6xl">
+      <main className="flex-1 p-6 md:p-10 overflow-y-auto max-w-6xl print:p-0 print:max-w-none">
         {children}
       </main>
     </div>
