@@ -11,12 +11,25 @@ interface DiagnosticsResult {
   errorMsg?: string;
 }
 
+interface Coupon {
+  code: string;
+  discount_pct: number;
+  is_active: boolean;
+}
+
 export default function AdminSettingsPage() {
   const [whatsappPhone, setWhatsappPhone] = useState('917970574329');
   const [supportEmail, setSupportEmail] = useState('hello@nutridates.in');
+  const [whatsappTemplate, setWhatsappTemplate] = useState('');
+  const [coupons, setCoupons] = useState<Coupon[]>([]);
+
   const [dbStatus, setDbStatus] = useState<'checking' | 'supabase' | 'fallback'>('checking');
   const [updating, setUpdating] = useState(false);
-  const [activeTab, setActiveTab] = useState<'config' | 'diagnostics'>('config');
+  const [activeTab, setActiveTab] = useState<'config' | 'coupons' | 'diagnostics'>('config');
+
+  // New coupon form state
+  const [newCode, setNewCode] = useState('');
+  const [newDiscount, setNewDiscount] = useState('10');
 
   // Diagnostics states
   const [diagnosticsRunning, setDiagnosticsRunning] = useState(false);
@@ -26,9 +39,15 @@ export default function AdminSettingsPage() {
     try {
       const res = await fetch('/api/settings');
       const data = await res.json();
-      if (res.ok && data.success && data.settings) {
-        setWhatsappPhone(data.settings.whatsapp_phone || '917970574329');
-        setSupportEmail(data.settings.support_email || 'hello@nutridates.in');
+      if (res.ok && data.success) {
+        if (data.settings) {
+          setWhatsappPhone(data.settings.whatsapp_phone || '917970574329');
+          setSupportEmail(data.settings.support_email || 'hello@nutridates.in');
+          setWhatsappTemplate(data.settings.whatsapp_template || '');
+        }
+        if (data.coupons) {
+          setCoupons(data.coupons || []);
+        }
       }
     } catch (err) {
       console.error('Error fetching settings:', err);
@@ -78,7 +97,8 @@ export default function AdminSettingsPage() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           whatsapp_phone: whatsappPhone,
-          support_email: supportEmail
+          support_email: supportEmail,
+          whatsapp_template: whatsappTemplate
         })
       });
       const data = await res.json();
@@ -94,6 +114,66 @@ export default function AdminSettingsPage() {
     } finally {
       setUpdating(false);
     }
+  };
+
+  const saveCoupons = async (updatedCoupons: Coupon[]) => {
+    try {
+      const res = await fetch('/api/settings', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          store_coupons: updatedCoupons
+        })
+      });
+      const data = await res.json();
+      if (res.ok && data.success) {
+        setCoupons(updatedCoupons);
+      } else {
+        alert('Failed to save coupons: ' + data.error);
+      }
+    } catch (err) {
+      console.error(err);
+      alert('Error updating coupons.');
+    }
+  };
+
+  const handleAddCoupon = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!newCode.trim()) return;
+
+    const normalizedCode = newCode.trim().toUpperCase();
+    if (coupons.some(c => c.code.trim().toUpperCase() === normalizedCode)) {
+      alert('A coupon with this code already exists.');
+      return;
+    }
+
+    const newCoupon: Coupon = {
+      code: normalizedCode,
+      discount_pct: parseInt(newDiscount) || 10,
+      is_active: true
+    };
+
+    const updated = [...coupons, newCoupon];
+    await saveCoupons(updated);
+    setNewCode('');
+  };
+
+  const handleDeleteCoupon = async (code: string) => {
+    const confirmDelete = window.confirm(`Are you sure you want to delete coupon ${code}?`);
+    if (!confirmDelete) return;
+
+    const updated = coupons.filter(c => c.code !== code);
+    await saveCoupons(updated);
+  };
+
+  const handleToggleCoupon = async (code: string) => {
+    const updated = coupons.map(c => {
+      if (c.code === code) {
+        return { ...c, is_active: !c.is_active };
+      }
+      return c;
+    });
+    await saveCoupons(updated);
   };
 
   return (
@@ -121,6 +201,16 @@ export default function AdminSettingsPage() {
           ⚙️ Store Config
         </button>
         <button
+          onClick={() => setActiveTab('coupons')}
+          className={`px-5 py-3 border-2 border-black border-b-0 rounded-t-lg text-xs font-black uppercase tracking-wider transition-all cursor-pointer ${
+            activeTab === 'coupons'
+              ? 'bg-[#FF5000] text-white shadow-[2px_0px_0px_0px_#111111] translate-y-[4px]'
+              : 'bg-white text-stone-600 hover:text-black'
+          }`}
+        >
+          🎫 Coupon Manager
+        </button>
+        <button
           onClick={() => {
             setActiveTab('diagnostics');
             runConnectionDiagnostics(true);
@@ -138,7 +228,7 @@ export default function AdminSettingsPage() {
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 pt-4">
         {/* Left Column (Content Panel - 2/3 width) */}
         <div className="lg:col-span-2 space-y-6">
-          {activeTab === 'config' ? (
+          {activeTab === 'config' && (
             <div className="border-4 border-black bg-white rounded-xl shadow-[6px_6px_0px_0px_#111111] p-6 space-y-6">
               <h3 className="text-xs font-black uppercase tracking-widest text-[#FF5000] border-b-2 border-black pb-3">
                 ⚙️ Store Settings
@@ -174,6 +264,25 @@ export default function AdminSettingsPage() {
                   />
                 </div>
 
+                <div>
+                  <label className="block text-xs font-black uppercase text-black mb-2">
+                    WhatsApp Redirect Message Template
+                  </label>
+                  <textarea 
+                    value={whatsappTemplate}
+                    onChange={(e) => setWhatsappTemplate(e.target.value)}
+                    rows={6}
+                    className="w-full border-2 border-black rounded-lg px-4 py-2.5 text-xs bg-white text-black font-semibold focus:outline-hidden focus:border-[#FF5000] font-mono leading-relaxed"
+                    placeholder="Hello Nutri Dates Team! I want to order..."
+                  />
+                  <div className="text-[10px] text-stone-500 font-bold uppercase mt-2 leading-relaxed bg-stone-50 border border-stone-200 p-3 rounded-lg space-y-1.5">
+                    <p className="text-black font-black">Available placeholders:</p>
+                    <p>• <span className="font-extrabold text-[#FF5000]">{`{name}`}</span>, <span className="font-extrabold text-[#FF5000]">{`{phone}`}</span>, <span className="font-extrabold text-[#FF5000]">{`{email}`}</span> - Customer Info</p>
+                    <p>• <span className="font-extrabold text-[#FF5000]">{`{address}`}</span>, <span className="font-extrabold text-[#FF5000]">{`{city}`}</span>, <span className="font-extrabold text-[#FF5000]">{`{state}`}</span>, <span className="font-extrabold text-[#FF5000]">{`{pincode}`}</span> - Delivery Location</p>
+                    <p>• <span className="font-extrabold text-[#FF5000]">{`{size}`}</span>, <span className="font-extrabold text-[#FF5000]">{`{qty}`}</span>, <span className="font-extrabold text-[#FF5000]">{`{total_price}`}</span>, <span className="font-extrabold text-[#FF5000]">{`{order_id}`}</span> - Order Details</p>
+                  </div>
+                </div>
+
                 <button
                   type="submit"
                   disabled={updating}
@@ -183,7 +292,106 @@ export default function AdminSettingsPage() {
                 </button>
               </form>
             </div>
-          ) : (
+          )}
+
+          {activeTab === 'coupons' && (
+            <div className="border-4 border-black bg-white rounded-xl shadow-[6px_6px_0px_0px_#111111] p-6 space-y-6">
+              <h3 className="text-xs font-black uppercase tracking-widest text-[#FF5000] border-b-2 border-black pb-3">
+                🎫 Coupon Code Manager
+              </h3>
+
+              {/* Add New Coupon Form */}
+              <form onSubmit={handleAddCoupon} className="bg-[#FBF9F6] border-2 border-black rounded-lg p-4 space-y-4 shadow-[2px_2px_0px_0px_#111111]">
+                <span className="text-[10px] font-black uppercase text-stone-500 tracking-wider">Create New Discount Coupon</span>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-[10px] font-black uppercase text-black mb-1.5">Coupon Code</label>
+                    <input 
+                      type="text"
+                      value={newCode}
+                      onChange={(e) => setNewCode(e.target.value)}
+                      placeholder="e.g. WELCOME10"
+                      className="w-full border-2 border-black rounded-lg px-3 py-2 text-xs bg-white text-black font-extrabold uppercase focus:outline-hidden focus:border-[#FF5000]"
+                      required
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-[10px] font-black uppercase text-black mb-1.5">Discount Percentage (%)</label>
+                    <input 
+                      type="number"
+                      min="1"
+                      max="100"
+                      value={newDiscount}
+                      onChange={(e) => setNewDiscount(e.target.value)}
+                      className="w-full border-2 border-black rounded-lg px-3 py-2 text-xs bg-white text-black font-semibold focus:outline-hidden focus:border-[#FF5000]"
+                      required
+                    />
+                  </div>
+                </div>
+                <button
+                  type="submit"
+                  className="bg-black hover:bg-[#FF5000] text-white border-2 border-black rounded-lg px-4 py-2.5 text-xs font-black uppercase tracking-wider cursor-pointer shadow-[2px_2px_0px_0px_#111111] transition-colors"
+                >
+                  ➕ Add Coupon
+                </button>
+              </form>
+
+              {/* Coupons Table List */}
+              <div className="space-y-3 pt-2">
+                <span className="text-[10px] font-black uppercase text-stone-400 tracking-wider">Active Coupons List</span>
+                {coupons.length === 0 ? (
+                  <div className="border-2 border-dashed border-stone-200 p-8 rounded-lg text-center text-xs font-bold text-stone-400 uppercase">
+                    No coupon codes registered yet.
+                  </div>
+                ) : (
+                  <div className="border-2 border-black rounded-lg overflow-hidden shadow-[3px_3px_0px_0px_#111111]">
+                    <table className="w-full text-left text-xs font-bold text-[#4E3A2E] bg-white">
+                      <thead>
+                        <tr className="border-b-2 border-black bg-stone-100 uppercase text-[9px] tracking-wider">
+                          <th className="p-3 border-r border-black">Code</th>
+                          <th className="p-3 border-r border-black text-center">Discount</th>
+                          <th className="p-3 border-r border-black text-center">Status</th>
+                          <th className="p-3 text-center">Action</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {coupons.map((coupon) => (
+                          <tr key={coupon.code} className="border-b border-stone-200 last:border-0 hover:bg-stone-50 transition-colors">
+                            <td className="p-3 border-r border-stone-200 font-extrabold text-black uppercase">{coupon.code}</td>
+                            <td className="p-3 border-r border-stone-200 text-center font-black text-[#FF5000]">{coupon.discount_pct}% Off</td>
+                            <td className="p-3 border-r border-stone-200 text-center">
+                              <button
+                                type="button"
+                                onClick={() => handleToggleCoupon(coupon.code)}
+                                className={`px-2.5 py-1 rounded text-[9px] font-black uppercase border cursor-pointer transition-transform ${
+                                  coupon.is_active 
+                                    ? 'bg-emerald-500 text-white border-black shadow-[1px_1px_0px_0px_#111111]' 
+                                    : 'bg-stone-200 text-stone-500 border-stone-300'
+                                }`}
+                              >
+                                {coupon.is_active ? 'Active' : 'Disabled'}
+                              </button>
+                            </td>
+                            <td className="p-3 text-center">
+                              <button
+                                type="button"
+                                onClick={() => handleDeleteCoupon(coupon.code)}
+                                className="bg-red-600 hover:bg-red-700 text-white px-3 py-1 rounded text-[9px] font-black uppercase cursor-pointer border border-black shadow-[1px_1px_0px_0px_#111111]"
+                              >
+                                Delete
+                              </button>
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
+
+          {activeTab === 'diagnostics' && (
             <div className="border-4 border-black bg-white rounded-xl shadow-[6px_6px_0px_0px_#111111] p-6 space-y-6">
               <div className="flex justify-between items-center border-b-2 border-black pb-3">
                 <h3 className="text-xs font-black uppercase tracking-widest text-[#FF5000]">

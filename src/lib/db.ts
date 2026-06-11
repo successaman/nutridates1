@@ -39,6 +39,18 @@ export interface Order {
   updated_at: string;
 }
 
+export interface Coupon {
+  code: string;
+  discount_pct: number;
+  is_active: boolean;
+}
+
+export interface StoreSettings {
+  whatsapp_phone: string;
+  support_email: string;
+  whatsapp_template?: string;
+}
+
 // Interface definition for Product Size
 export interface ProductSize {
   size: string;
@@ -313,7 +325,7 @@ export const db = {
   },
 
   // 3. SETTINGS & WHATSAPP PHONE CONTROLS
-  async getSettings(): Promise<{ whatsapp_phone: string; support_email: string }> {
+  async getSettings(): Promise<StoreSettings> {
     if (supabase) {
       const { data, error } = await supabase
         .from('settings')
@@ -322,14 +334,14 @@ export const db = {
         .single();
 
       if (!error && data && data.value) {
-        return data.value;
+        return data.value as StoreSettings;
       }
     }
     const localDb = readJsonDb();
-    return localDb.settings || { whatsapp_phone: '917970574329', support_email: 'hello@nutridates.in' };
+    return (localDb.settings || { whatsapp_phone: '917970574329', support_email: 'hello@nutridates.in' }) as StoreSettings;
   },
 
-  async updateSettings(settings: { whatsapp_phone: string; support_email: string }): Promise<boolean> {
+  async updateSettings(settings: StoreSettings): Promise<boolean> {
     if (supabase) {
       const { error } = await supabase
         .from('settings')
@@ -341,6 +353,37 @@ export const db = {
 
     const localDb = readJsonDb();
     localDb.settings = settings;
+    return writeJsonDb(localDb);
+  },
+
+  async getCoupons(): Promise<Coupon[]> {
+    if (supabase) {
+      const { data, error } = await supabase
+        .from('settings')
+        .select('*')
+        .eq('key', 'store_coupons')
+        .single();
+
+      if (!error && data && data.value) {
+        return data.value as Coupon[];
+      }
+    }
+    const localDb = readJsonDb();
+    return (localDb.coupons || []) as Coupon[];
+  },
+
+  async updateCoupons(coupons: Coupon[]): Promise<boolean> {
+    if (supabase) {
+      const { error } = await supabase
+        .from('settings')
+        .upsert({ key: 'store_coupons', value: coupons, updated_at: new Date().toISOString() });
+
+      if (!error) return true;
+      console.warn('Supabase updateCoupons failed, trying local JSON DB:', error.message);
+    }
+
+    const localDb = readJsonDb();
+    localDb.coupons = coupons;
     return writeJsonDb(localDb);
   },
 

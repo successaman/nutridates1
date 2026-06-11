@@ -47,9 +47,49 @@ export default function CheckoutModal({ isOpen, onClose }: CheckoutModalProps) {
   const [selectedSize, setSelectedSize] = useState<string>('250g');
   const [quantity, setQuantity] = useState<number>(1);
   const [whatsappPhone, setWhatsappPhone] = useState<string>('917970574329');
+  const [whatsappTemplate, setWhatsappTemplate] = useState<string>('');
+
+  // Coupon states
+  const [couponCode, setCouponCode] = useState<string>('');
+  const [appliedCoupon, setAppliedCoupon] = useState<{ code: string; discount_pct: number } | null>(null);
+  const [couponError, setCouponError] = useState<string>('');
 
   const activeSize = sizes.find(s => s.size === selectedSize) || sizes.find(s => s.in_stock) || sizes[0];
-  const totalPrice = activeSize.price * quantity;
+  const subtotal = activeSize.price * quantity;
+  const discountAmount = appliedCoupon ? Math.round((subtotal * appliedCoupon.discount_pct) / 100) : 0;
+  const totalPrice = subtotal - discountAmount;
+
+  const handleApplyCoupon = async () => {
+    if (!couponCode.trim()) {
+      setCouponError('Please enter a coupon code.');
+      return;
+    }
+    setCouponError('');
+    try {
+      const res = await fetch('/api/coupons/validate', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ code: couponCode })
+      });
+      const data = await res.json();
+      if (res.ok && data.success) {
+        setAppliedCoupon({ code: data.code, discount_pct: data.discount_pct });
+        setCouponError('');
+      } else {
+        setAppliedCoupon(null);
+        setCouponError(data.error || 'Invalid coupon code.');
+      }
+    } catch (err) {
+      setAppliedCoupon(null);
+      setCouponError('Failed to validate coupon.');
+    }
+  };
+
+  const handleRemoveCoupon = () => {
+    setAppliedCoupon(null);
+    setCouponCode('');
+    setCouponError('');
+  };
 
   // Payment Option selection: 'razorpay' or 'whatsapp'
   const [purchaseMethod, setPurchaseMethod] = useState<'razorpay' | 'whatsapp'>('razorpay');
@@ -89,6 +129,9 @@ export default function CheckoutModal({ isOpen, onClose }: CheckoutModalProps) {
         if (settingsRes.ok && settingsData.success && settingsData.settings) {
           if (settingsData.settings.whatsapp_phone) {
             setWhatsappPhone(settingsData.settings.whatsapp_phone);
+          }
+          if (settingsData.settings.whatsapp_template) {
+            setWhatsappTemplate(settingsData.settings.whatsapp_template);
           }
         }
       } catch (err) {
@@ -174,7 +217,7 @@ export default function CheckoutModal({ isOpen, onClose }: CheckoutModalProps) {
           state: formData.state,
           pincode: formData.pincode,
           total_amount: totalPrice,
-          payment_method: purchaseMethod === 'razorpay' ? 'Online (Razorpay)' : 'Cash on Delivery',
+          payment_method: (purchaseMethod === 'razorpay' ? 'Online (Razorpay)' : 'Cash on Delivery') + (appliedCoupon ? ` [Coupon: ${appliedCoupon.code} - ${appliedCoupon.discount_pct}% off]` : ''),
           items: [
             {
               id: 'prod_chocolate_mix',
@@ -212,7 +255,23 @@ export default function CheckoutModal({ isOpen, onClose }: CheckoutModalProps) {
         setProcessStep('Formatting your order details...');
         await new Promise((resolve) => setTimeout(resolve, 600));
 
-        const message = `Hello Nutri Dates Team!\n\nI want to order Chocolate Dates Nutrition Powder (${selectedSize}) x ${quantity}.\n\nOrder ID: ${order.id}\n\nMy Delivery Details:\n- Name: ${formData.fullName}\n- Phone: ${formData.phone}\n- Email: ${formData.email}\n- Address: ${formData.address}, ${formData.city}, ${formData.state} - ${formData.pincode}\n\nOrder Total: ₹${totalPrice} (Cash on Delivery / UPI)\n\nPlease confirm my order. Thanks!`;
+        let message = '';
+        if (whatsappTemplate && whatsappTemplate.trim()) {
+          message = whatsappTemplate
+            .replace(/{name}/g, formData.fullName)
+            .replace(/{phone}/g, formData.phone)
+            .replace(/{email}/g, formData.email)
+            .replace(/{address}/g, formData.address)
+            .replace(/{city}/g, formData.city)
+            .replace(/{state}/g, formData.state)
+            .replace(/{pincode}/g, formData.pincode)
+            .replace(/{size}/g, selectedSize)
+            .replace(/{qty}/g, String(quantity))
+            .replace(/{order_id}/g, order.id)
+            .replace(/{total_price}/g, String(totalPrice));
+        } else {
+          message = `Hello Nutri Dates Team!\n\nI want to order Chocolate Dates Nutrition Powder (${selectedSize}) x ${quantity}.\n\nOrder ID: ${order.id}\n\nMy Delivery Details:\n- Name: ${formData.fullName}\n- Phone: ${formData.phone}\n- Email: ${formData.email}\n- Address: ${formData.address}, ${formData.city}, ${formData.state} - ${formData.pincode}\n\nOrder Total: ₹${totalPrice} (Cash on Delivery / UPI)\n\nPlease confirm my order. Thanks!`;
+        }
         
         const encodedMessage = encodeURIComponent(message);
         const whatsappUrl = `https://wa.me/${whatsappPhone}?text=${encodedMessage}`;
@@ -592,6 +651,48 @@ export default function CheckoutModal({ isOpen, onClose }: CheckoutModalProps) {
                     </div>
                   </div>
 
+                  {/* Step 3: Discount Coupon Code */}
+                  <div className="border-t-2 border-stone-200 pt-5">
+                    <h4 className="text-xs font-black uppercase tracking-widest text-[#FF5000] mb-3">
+                      3. Apply Coupon Code
+                    </h4>
+                    <div className="flex gap-2">
+                      <input
+                        type="text"
+                        value={couponCode}
+                        onChange={(e) => setCouponCode(e.target.value)}
+                        placeholder="e.g. WELCOME10"
+                        disabled={!!appliedCoupon}
+                        className="flex-1 rounded-lg border-2 border-black px-4 py-2.5 text-xs bg-white text-black font-semibold uppercase tracking-wider focus:outline-hidden focus:border-[#FF5000] disabled:bg-stone-100 disabled:text-stone-500 disabled:cursor-not-allowed"
+                      />
+                      {appliedCoupon ? (
+                        <button
+                          type="button"
+                          onClick={handleRemoveCoupon}
+                          className="bg-red-600 hover:bg-red-700 text-white border-2 border-black rounded-lg px-4 py-2 text-xs font-black uppercase tracking-wider cursor-pointer shadow-[2px_2px_0px_0px_#111111]"
+                        >
+                          Remove
+                        </button>
+                      ) : (
+                        <button
+                          type="button"
+                          onClick={handleApplyCoupon}
+                          className="bg-black hover:bg-[#FF5000] text-white border-2 border-black rounded-lg px-4 py-2 text-xs font-black uppercase tracking-wider cursor-pointer shadow-[2px_2px_0px_0px_#111111] transition-colors"
+                        >
+                          Apply
+                        </button>
+                      )}
+                    </div>
+                    {couponError && (
+                      <p className="mt-1 text-xs font-bold text-red-500">{couponError}</p>
+                    )}
+                    {appliedCoupon && (
+                      <p className="mt-1 text-xs font-bold text-emerald-600">
+                        🎉 Coupon "{appliedCoupon.code}" applied! You get {appliedCoupon.discount_pct}% off.
+                      </p>
+                    )}
+                  </div>
+
                   {/* Order Review Card with thumbnail */}
                   <div className="rounded-lg bg-[#F9F7F5] p-4 border-2 border-black flex items-center gap-4">
                     <div className="relative h-16 w-16 shrink-0 border-2 border-black bg-white rounded-lg overflow-hidden">
@@ -607,6 +708,12 @@ export default function CheckoutModal({ isOpen, onClose }: CheckoutModalProps) {
                         <span>Chocolate Dates Nutrition Powder ({selectedSize})</span>
                         <span>₹{activeSize.price} x {quantity}</span>
                       </div>
+                      {appliedCoupon && (
+                        <div className="flex justify-between text-xs font-bold text-[#4E3A2E] mb-1">
+                          <span>Discount ({appliedCoupon.code} - {appliedCoupon.discount_pct}%)</span>
+                          <span className="text-red-500">-₹{discountAmount}</span>
+                        </div>
+                      )}
                       <div className="flex justify-between text-xs font-bold text-[#4E3A2E] mb-2">
                         <span>Delivery Shipping</span>
                         <span className="text-emerald-600 uppercase font-black">Free</span>
