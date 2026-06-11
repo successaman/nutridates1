@@ -47,6 +47,7 @@ ALTER TABLE public.settings ENABLE ROW LEVEL SECURITY;
 CREATE POLICY "Allow public read access to orders" ON public.orders FOR SELECT TO anon USING (true);
 CREATE POLICY "Allow public insert to orders" ON public.orders FOR INSERT TO anon WITH CHECK (true);
 CREATE POLICY "Allow public update to orders" ON public.orders FOR UPDATE TO anon USING (true);
+CREATE POLICY "Allow public delete to orders" ON public.orders FOR DELETE TO anon USING (true);
 
 CREATE POLICY "Allow public read to products" ON public.products FOR SELECT TO anon USING (true);
 CREATE POLICY "Allow public update to products" ON public.products FOR UPDATE TO anon USING (true);

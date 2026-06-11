@@ -37,16 +37,18 @@ export default function CheckoutModal({ isOpen, onClose }: CheckoutModalProps) {
   // Validation errors
   const [errors, setErrors] = useState<FormErrors>({});
 
-  // Pack size and quantity
-  const SIZES = [
-    { size: '250g', price: 299 },
-    { size: '500g', price: 549 },
-    { size: '1kg', price: 999 }
+  // Pack size and quantity defaults
+  const DEFAULT_SIZES = [
+    { size: '250g', price: 299, in_stock: true },
+    { size: '500g', price: 549, in_stock: true },
+    { size: '1kg', price: 999, in_stock: true }
   ];
-  const [selectedSize, setSelectedSize] = useState<'250g' | '500g' | '1kg'>('250g');
+  const [sizes, setSizes] = useState<Array<{ size: string; price: number; in_stock: boolean }>>(DEFAULT_SIZES);
+  const [selectedSize, setSelectedSize] = useState<string>('250g');
   const [quantity, setQuantity] = useState<number>(1);
+  const [whatsappPhone, setWhatsappPhone] = useState<string>('917970574329');
 
-  const activeSize = SIZES.find(s => s.size === selectedSize) || SIZES[0];
+  const activeSize = sizes.find(s => s.size === selectedSize) || sizes.find(s => s.in_stock) || sizes[0];
   const totalPrice = activeSize.price * quantity;
 
   // Payment Option selection: 'razorpay' or 'whatsapp'
@@ -55,6 +57,49 @@ export default function CheckoutModal({ isOpen, onClose }: CheckoutModalProps) {
   // Loading state
   const [isProcessing, setIsProcessing] = useState(false);
   const [processStep, setProcessStep] = useState('');
+
+  // Fetch live product catalog sizes and settings
+  useEffect(() => {
+    const fetchCatalogAndSettings = async () => {
+      try {
+        const res = await fetch('/api/products');
+        const data = await res.json();
+        if (res.ok && data.success && data.products && data.products.length > 0) {
+          const product = data.products.find((p: any) => p.id === 'prod_chocolate_mix');
+          if (product && product.sizes && product.sizes.length > 0) {
+            setSizes(product.sizes);
+            
+            // Auto-select first in-stock size if current size is not in-stock or not in list
+            const currentActive = product.sizes.find((s: any) => s.size === selectedSize);
+            if (!currentActive || !currentActive.in_stock) {
+              const firstInStock = product.sizes.find((s: any) => s.in_stock);
+              if (firstInStock) {
+                setSelectedSize(firstInStock.size);
+              }
+            }
+          }
+        }
+      } catch (err) {
+        console.warn('Failed to fetch live catalog, using offline prices:', err);
+      }
+
+      try {
+        const settingsRes = await fetch('/api/settings');
+        const settingsData = await settingsRes.json();
+        if (settingsRes.ok && settingsData.success && settingsData.settings) {
+          if (settingsData.settings.whatsapp_phone) {
+            setWhatsappPhone(settingsData.settings.whatsapp_phone);
+          }
+        }
+      } catch (err) {
+        console.warn('Failed to fetch settings, using offline WhatsApp number:', err);
+      }
+    };
+
+    if (isOpen) {
+      fetchCatalogAndSettings();
+    }
+  }, [isOpen]);
 
   // Lock body scroll when modal is open
   useEffect(() => {
@@ -170,7 +215,7 @@ export default function CheckoutModal({ isOpen, onClose }: CheckoutModalProps) {
         const message = `Hello Nutri Dates Team!\n\nI want to order Chocolate Dates Nutrition Powder (${selectedSize}) x ${quantity}.\n\nOrder ID: ${order.id}\n\nMy Delivery Details:\n- Name: ${formData.fullName}\n- Phone: ${formData.phone}\n- Email: ${formData.email}\n- Address: ${formData.address}, ${formData.city}, ${formData.state} - ${formData.pincode}\n\nOrder Total: ₹${totalPrice} (Cash on Delivery / UPI)\n\nPlease confirm my order. Thanks!`;
         
         const encodedMessage = encodeURIComponent(message);
-        const whatsappUrl = `https://wa.me/917970574329?text=${encodedMessage}`;
+        const whatsappUrl = `https://wa.me/${whatsappPhone}?text=${encodedMessage}`;
         
         // Open whatsapp tab
         window.open(whatsappUrl, '_blank');
@@ -213,7 +258,7 @@ export default function CheckoutModal({ isOpen, onClose }: CheckoutModalProps) {
                   Secure Checkout
                 </h3>
                 <p className="text-xs font-bold text-[#4E3A2E] mt-0.5 uppercase tracking-wider">
-                  Nutri Dates · 250g Pack (₹299)
+                  Nutri Dates · {selectedSize} Pack (₹{activeSize.price})
                 </p>
               </div>
               {!isProcessing && (
@@ -421,18 +466,21 @@ export default function CheckoutModal({ isOpen, onClose }: CheckoutModalProps) {
                           Select Pack Size
                         </label>
                         <div className="flex gap-2">
-                          {SIZES.map((s) => (
+                          {sizes.map((s) => (
                             <button
                               key={s.size}
                               type="button"
-                              onClick={() => setSelectedSize(s.size as any)}
-                              className={`flex-1 rounded-lg border-2 py-2 text-xs font-black uppercase tracking-wider transition-all cursor-pointer ${
-                                selectedSize === s.size
+                              disabled={!s.in_stock}
+                              onClick={() => setSelectedSize(s.size)}
+                              className={`flex-1 rounded-lg border-2 py-2 text-[10px] sm:text-xs font-black uppercase tracking-wider transition-all cursor-pointer ${
+                                !s.in_stock
+                                  ? 'border-stone-200 bg-stone-100 text-stone-400 cursor-not-allowed opacity-50'
+                                  : selectedSize === s.size
                                   ? 'border-black bg-[#FF5000] text-white shadow-[2px_2px_0px_0px_#111111]'
                                   : 'border-stone-300 bg-white text-[#4E3A2E] hover:border-black'
                               }`}
                             >
-                              {s.size} (₹{s.price})
+                              {s.size} (₹{s.price}){!s.in_stock && ' - OUT'}
                             </button>
                           ))}
                         </div>

@@ -148,7 +148,8 @@ export default function AdminOrdersPage() {
   };
 
   return (
-    <div className="space-y-6 text-[#111111] relative min-h-screen pb-16">
+    <>
+      <div className="space-y-6 text-[#111111] relative min-h-screen pb-16 print:hidden">
       {/* Header */}
       <div>
         <h2 className="text-3xl font-black uppercase tracking-tight">
@@ -281,12 +282,20 @@ export default function AdminOrdersPage() {
                       Order Details: {selectedOrder.id}
                     </h3>
                   </div>
-                  <button 
-                    onClick={() => setSelectedOrder(null)}
-                    className="text-stone-500 hover:text-black font-black uppercase text-xs cursor-pointer border-2 border-transparent hover:border-black rounded px-2 py-1"
-                  >
-                    ✕ Close
-                  </button>
+                  <div className="flex gap-2">
+                    <button
+                      onClick={() => window.print()}
+                      className="bg-[#FF5000] hover:bg-[#E04700] text-white border-2 border-black rounded px-2.5 py-1 text-[10px] font-black uppercase tracking-wider cursor-pointer shadow-[2px_2px_0px_0px_#111111] transition-transform active:translate-y-0.5"
+                    >
+                      🖨️ Print Invoice
+                    </button>
+                    <button 
+                      onClick={() => setSelectedOrder(null)}
+                      className="text-stone-500 hover:text-black font-black uppercase text-[10px] cursor-pointer border-2 border-transparent hover:border-black rounded px-2.5 py-1"
+                    >
+                      ✕ Close
+                    </button>
+                  </div>
                 </div>
 
                 {/* Status Badging */}
@@ -509,5 +518,98 @@ export default function AdminOrdersPage() {
         )}
       </AnimatePresence>
     </div>
-  );
+
+    {/* Printable Invoice Container (Only rendered in printing) */}
+    {selectedOrder && (
+      <div className="hidden print:block bg-white text-black p-8 font-sans w-full max-w-[800px] mx-auto text-xs">
+        <div className="flex justify-between items-start border-b-4 border-black pb-4">
+          <div>
+            <h1 className="text-2xl font-black uppercase tracking-tight text-black">NUTRI DATES</h1>
+            <p className="text-[9px] font-bold text-stone-500 uppercase tracking-widest">India's Premium Date-Based Nutrition</p>
+            <p className="mt-1.5 font-semibold text-stone-600 text-[10px] leading-tight">
+              FSSAI Lic No: 21124233000981<br />
+              Support: hello@nutridates.in | WhatsApp: +91 79705 74329
+            </p>
+          </div>
+          <div className="text-right">
+            <h2 className="text-base font-black uppercase tracking-wider text-orange-600">TAX INVOICE</h2>
+            <p className="font-extrabold text-black">Invoice ID: {selectedOrder.id}</p>
+            <p className="text-stone-500">Date: {new Date(selectedOrder.created_at).toLocaleDateString('en-IN')}</p>
+          </div>
+        </div>
+
+        <div className="grid grid-cols-2 gap-8 my-6">
+          <div>
+            <h3 className="font-black uppercase text-[9px] tracking-wider text-stone-400 mb-1">Customer / Shipping Address</h3>
+            <div className="font-bold border border-stone-200 p-3 rounded text-[11px] leading-relaxed">
+              <p className="text-sm font-black uppercase text-black">{selectedOrder.customer_name}</p>
+              <p className="text-stone-600 mt-1">Phone: {selectedOrder.phone}</p>
+              {selectedOrder.email && <p className="text-stone-600">Email: {selectedOrder.email}</p>}
+              <p className="mt-2 text-stone-700 uppercase">
+                {selectedOrder.address}<br />
+                {selectedOrder.city}, {selectedOrder.state} - {selectedOrder.pincode}
+              </p>
+            </div>
+          </div>
+          <div>
+            <h3 className="font-black uppercase text-[9px] tracking-wider text-stone-400 mb-1">Billing / Store Details</h3>
+            <div className="font-semibold border border-stone-200 p-3 rounded text-stone-600 text-[11px] leading-relaxed">
+              <p className="font-bold uppercase text-black">Nutri Dates Enterprise</p>
+              <p className="mt-1">Main Store Road, Hazaribagh</p>
+              <p>Jharkhand, India - 825301</p>
+              <p className="mt-2 text-[10px] text-stone-500 uppercase font-bold">GSTIN: MockGSTIN9817</p>
+            </div>
+          </div>
+        </div>
+
+        <table className="w-full text-left border-2 border-black mb-6">
+          <thead>
+            <tr className="bg-stone-100 border-b-2 border-black uppercase text-[9px] font-black text-black">
+              <th className="p-3">Product Description</th>
+              <th className="p-3 text-center">Pack Size</th>
+              <th className="p-3 text-center">Quantity</th>
+              <th className="p-3 text-right">Unit Price</th>
+              <th className="p-3 text-right">Total Price</th>
+            </tr>
+          </thead>
+          <tbody>
+            {selectedOrder.items.map((item, idx) => (
+              <tr key={idx} className="border-b border-stone-200 text-xs font-bold text-stone-800">
+                <td className="p-3 uppercase">{item.name}</td>
+                <td className="p-3 text-center uppercase">{item.size}</td>
+                <td className="p-3 text-center">{item.quantity}</td>
+                <td className="p-3 text-right">₹{item.price}</td>
+                <td className="p-3 text-right">₹{item.price * item.quantity}</td>
+              </tr>
+            ))}
+            <tr className="font-bold border-t-2 border-black text-stone-600">
+              <td colSpan={3} className="p-3"></td>
+              <td className="p-3 text-right uppercase">Shipping</td>
+              <td className="p-3 text-right text-emerald-600 uppercase font-black">Free</td>
+            </tr>
+            <tr className="font-black text-sm border-t border-stone-200 uppercase text-black">
+              <td colSpan={3} className="p-3"></td>
+              <td className="p-3 text-right">Grand Total</td>
+              <td className="p-3 text-right text-orange-600">₹{selectedOrder.total_amount}</td>
+            </tr>
+          </tbody>
+        </table>
+
+        <div className="flex justify-between items-end border-t border-dashed border-stone-300 pt-4 mt-8">
+          <div>
+            <p className="font-bold uppercase text-[9px] text-stone-400">Payment Terms</p>
+            <p className="font-extrabold uppercase text-[#111111]">{selectedOrder.payment_method}</p>
+            <p className="text-[10px] text-stone-500 mt-1 font-semibold">Thank you for ordering healthy date powder with Nutri Dates!</p>
+          </div>
+          <div className="text-center">
+            <div className="border border-stone-400 w-32 h-10 flex items-center justify-center font-mono font-bold tracking-widest text-[9px] uppercase text-stone-400 mb-1">
+              ||||| {selectedOrder.id} |||||
+            </div>
+            <p className="text-[9px] font-bold text-stone-400 uppercase">Authorized Signature</p>
+          </div>
+        </div>
+      </div>
+    )}
+  </>
+);
 }

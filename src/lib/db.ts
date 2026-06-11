@@ -43,6 +43,7 @@ export interface Order {
 export interface ProductSize {
   size: string;
   price: number;
+  original_price?: number;
   in_stock: boolean;
 }
 
@@ -66,9 +67,9 @@ const DEFAULT_PRODUCTS: Product[] = [
     name: 'Chocolate Dates Nutrition Powder',
     description: 'Date-Based Chocolate Nutrition Powder with Oats and Mixed Dry Fruits. India\'s first healthy sugar-free kids and gym mix.',
     sizes: [
-      { size: '250g', price: 299, in_stock: true },
-      { size: '500g', price: 549, in_stock: true },
-      { size: '1kg', price: 999, in_stock: true }
+      { size: '250g', price: 299, original_price: 349, in_stock: true },
+      { size: '500g', price: 549, original_price: 699, in_stock: true },
+      { size: '1kg', price: 999, original_price: 1299, in_stock: true }
     ],
     stock_status: 'in_stock',
     created_at: new Date().toISOString()
@@ -345,21 +346,141 @@ export const db = {
 
   async resetOrders(): Promise<boolean> {
     if (supabase) {
-      try {
-        const { error } = await supabase
+      // 1. Fetch count before delete to verify actual database state changes
+      const { count: beforeCount, error: countError } = await supabase
+        .from('orders')
+        .select('*', { count: 'exact', head: true });
+      
+      if (countError) {
+        console.warn('Supabase resetOrders: pre-count check failed:', countError.message);
+      }
+
+      // 2. Perform delete query
+      const { error } = await supabase
+        .from('orders')
+        .delete()
+        .neq('id', '');
+        
+      if (error) {
+        console.error('Supabase resetOrders failed:', error.message);
+        throw new Error(`Supabase Database Error: ${error.message}. This is usually caused by Row-Level Security (RLS) policies. Please run the updated SQL setup script containing the DELETE policy in your Supabase SQL Editor.`);
+      }
+
+      // 3. Verify if anything was actually deleted (if we had rows before)
+      if (beforeCount && beforeCount > 0) {
+        const { count: afterCount, error: verifyError } = await supabase
           .from('orders')
-          .delete()
-          .neq('id', '');
-        if (error) {
-          console.warn('Supabase resetOrders failed:', error.message);
+          .select('*', { count: 'exact', head: true });
+        
+        if (!verifyError && afterCount && afterCount > 0 && afterCount === beforeCount) {
+          // Count hasn't decreased. This happens when RLS silently blocks DELETE on public tables.
+          throw new Error(`Supabase RLS Policy Block: Deletion was ignored by the database server. This is caused by a missing Row-Level Security (RLS) policy for DELETE on the 'orders' table. Please go to your Supabase Dashboard, open SQL Editor, and run:\n\nCREATE POLICY "Allow public delete to orders" ON public.orders FOR DELETE TO anon USING (true);`);
         }
-      } catch (err: any) {
-        console.warn('Supabase resetOrders error:', err.message);
       }
     }
 
     const localDb = readJsonDb();
     localDb.orders = [];
     return writeJsonDb(localDb);
+  },
+
+  async testDatabaseConnection(): Promise<{
+    supabaseConnected: boolean;
+    selectOk: boolean;
+    insertOk: boolean;
+    updateOk: boolean;
+    deleteOk: boolean;
+    errorMsg?: string;
+  }> {
+    if (!supabase) {
+      return {
+        supabaseConnected: false,
+        selectOk: false,
+        insertOk: false,
+        updateOk: false,
+        deleteOk: false,
+        errorMsg: 'Supabase URL or Key not set. Running in local JSON DB fallback mode.'
+      };
+    }
+
+    const testId = `ND-TEST-${Date.now()}`;
+    const testOrder: Order = {
+      id: testId,
+      customer_name: 'DIAGNOSTICS SYSTEM TEST',
+      phone: '9999999999',
+      email: 'diagnostics@nutridates.in',
+      address: 'System Diagnostic test block',
+      city: 'Hazaribagh',
+      state: 'Jharkhand',
+      pincode: '825301',
+      total_amount: 1,
+      payment_method: 'Test Payment',
+      status: 'pending',
+      items: [{ id: 'test_item', name: 'Diagnostics Item', price: 1, quantity: 1, size: '250g' }],
+      timeline: [{ status: 'pending', timestamp: new Date().toISOString(), note: 'Diagnostics test run.' }],
+      created_at: new Date().toISOString(),
+      updated_at: new Date().toISOString()
+    };
+
+    try {
+      // 1. Test Select
+      const { error: selectError } = await supabase.from('orders').select('id').limit(1);
+      const selectOk = !selectError;
+
+      // 2. Test Insert
+      const { error: insertError } = await supabase.from('orders').insert([testOrder]);
+      const insertOk = !insertError;
+
+      if (!insertOk) {
+        return {
+          supabaseConnected: true,
+          selectOk,
+          insertOk: false,
+          updateOk: false,
+          deleteOk: false,
+          errorMsg: `INSERT failed: ${insertError?.message || 'Unknown error'}`
+        };
+      }
+
+      // 3. Test Update
+      const { error: updateError } = await supabase
+        .from('orders')
+        .update({ customer_name: 'DIAGNOSTICS SYSTEM TEST UPDATED' })
+        .eq('id', testId);
+      const updateOk = !updateError;
+
+      // 4. Test Delete (Verify by querying since PostgREST doesn't return delete count errors directly)
+      const { error: deleteError } = await supabase
+        .from('orders')
+        .delete()
+        .eq('id', testId);
+      
+      let deleteOk = !deleteError;
+      if (deleteOk) {
+        const { data: checkData } = await supabase.from('orders').select('id').eq('id', testId);
+        if (checkData && checkData.length > 0) {
+          deleteOk = false; // The record was not deleted. RLS blocked delete!
+        }
+      }
+
+      return {
+        supabaseConnected: true,
+        selectOk,
+        insertOk,
+        updateOk,
+        deleteOk,
+        errorMsg: deleteOk ? undefined : 'DELETE was blocked by RLS policies.'
+      };
+    } catch (err: any) {
+      return {
+        supabaseConnected: true,
+        selectOk: false,
+        insertOk: false,
+        updateOk: false,
+        deleteOk: false,
+        errorMsg: `Catch error during diagnostics: ${err.message}`
+      };
+    }
   }
 };
+

@@ -69,7 +69,8 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
     { label: 'Overview', path: '/admin', icon: '📊' },
     { label: 'Orders Feed', path: '/admin/orders', icon: '📦' },
     { label: 'Manage Products', path: '/admin/products', icon: '🏷️' },
-    { label: 'Settings', path: '/admin/settings', icon: '⚙️' },
+    { label: 'Order Simulator', path: '/admin/simulator', icon: '⚡' },
+    { label: 'Settings & Status', path: '/admin/settings', icon: '⚙️' },
   ];
 
   return (
