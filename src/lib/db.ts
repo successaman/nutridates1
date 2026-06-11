@@ -341,5 +341,25 @@ export const db = {
     const localDb = readJsonDb();
     localDb.settings = settings;
     return writeJsonDb(localDb);
+  },
+
+  async resetOrders(): Promise<boolean> {
+    if (supabase) {
+      try {
+        const { error } = await supabase
+          .from('orders')
+          .delete()
+          .neq('id', '');
+        if (error) {
+          console.warn('Supabase resetOrders failed:', error.message);
+        }
+      } catch (err: any) {
+        console.warn('Supabase resetOrders error:', err.message);
+      }
+    }
+
+    const localDb = readJsonDb();
+    localDb.orders = [];
+    return writeJsonDb(localDb);
   }
 };

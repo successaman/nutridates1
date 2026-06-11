@@ -18,6 +18,7 @@ export default function AdminDashboardPage() {
   const [orders, setOrders] = useState<Order[]>([]);
   const [loading, setLoading] = useState(true);
   const [generating, setGenerating] = useState(false);
+  const [resetting, setResetting] = useState(false);
   const [stats, setStats] = useState({
     totalSales: 0,
     totalOrders: 0,
@@ -79,6 +80,28 @@ export default function AdminDashboardPage() {
     }
   };
 
+  const handleResetOrders = async () => {
+    const confirmReset = window.confirm('WARNING: Are you sure you want to delete all orders? This will wipe out all mock/test orders and cannot be undone!');
+    if (!confirmReset) return;
+
+    setResetting(true);
+    try {
+      const res = await fetch('/api/orders/reset', { method: 'POST' });
+      const data = await res.json();
+      if (res.ok && data.success) {
+        alert('All orders have been successfully cleared from the database.');
+        await fetchDashboardData();
+      } else {
+        alert('Failed to reset orders: ' + data.error);
+      }
+    } catch (err) {
+      console.error(err);
+      alert('Error connecting to reset API.');
+    } finally {
+      setResetting(false);
+    }
+  };
+
   // Group sales by date for charts
   const getSalesTimelineData = () => {
     const datesMap: Record<string, number> = {};
@@ -125,13 +148,23 @@ export default function AdminDashboardPage() {
             Real-time shop status & process metrics
           </p>
         </div>
-        <button
-          onClick={handleGenerateTestData}
-          disabled={generating}
-          className="bg-[#2B1D14] hover:bg-black text-white border-2 border-black rounded-lg px-5 py-3 text-xs font-black uppercase tracking-widest cursor-pointer shadow-[3px_3px_0px_0px_#FF5000] transition-all disabled:opacity-70 disabled:cursor-not-allowed"
-        >
-          {generating ? '⚙️ Generating Data...' : '⚡ Generate Test Orders'}
-        </button>
+        <div className="flex flex-wrap gap-3">
+          <button
+            onClick={handleGenerateTestData}
+            disabled={generating || resetting}
+            className="bg-[#2B1D14] hover:bg-black text-white border-2 border-black rounded-lg px-5 py-3 text-xs font-black uppercase tracking-widest cursor-pointer shadow-[3px_3px_0px_0px_#FF5000] transition-all disabled:opacity-70 disabled:cursor-not-allowed"
+          >
+            {generating ? '⚙️ Generating...' : '⚡ Generate Test Orders'}
+          </button>
+
+          <button
+            onClick={handleResetOrders}
+            disabled={generating || resetting}
+            className="bg-red-600 hover:bg-red-700 text-white border-2 border-black rounded-lg px-5 py-3 text-xs font-black uppercase tracking-widest cursor-pointer shadow-[3px_3px_0px_0px_#111111] transition-all disabled:opacity-70 disabled:cursor-not-allowed"
+          >
+            {resetting ? '🗑️ Resetting...' : '🗑️ Reset Orders'}
+          </button>
+        </div>
       </div>
 
       {loading ? (

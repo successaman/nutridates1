@@ -144,6 +144,37 @@ export default function AdminSettingsPage() {
                 : 'Your database is falling back to a local JSON file store (data/db.json). Check your environment variables to link Supabase.'}
             </p>
           </div>
+
+          {/* Danger Zone Card */}
+          <div className="border-4 border-black bg-white rounded-xl shadow-[6px_6px_0px_0px_#111111] p-6 space-y-4 border-red-500 shadow-[6px_6px_0px_0px_#EF4444]">
+            <h3 className="text-xs font-black uppercase tracking-widest text-red-600 border-b-2 border-red-200 pb-3">
+              ⚠️ Danger Zone
+            </h3>
+            <p className="text-xs font-semibold text-stone-500 leading-tight">
+              Delete all orders in the database to clear test records and begin fresh with live store orders.
+            </p>
+            <button
+              onClick={async () => {
+                const confirmReset = window.confirm('WARNING: Are you sure you want to delete all orders? This will wipe out all mock/test orders and cannot be undone!');
+                if (!confirmReset) return;
+                try {
+                  const res = await fetch('/api/orders/reset', { method: 'POST' });
+                  const data = await res.json();
+                  if (res.ok && data.success) {
+                    alert('All orders have been successfully cleared from the database.');
+                    window.location.reload();
+                  } else {
+                    alert('Failed to reset orders: ' + data.error);
+                  }
+                } catch (err) {
+                  alert('Error connecting to reset API.');
+                }
+              }}
+              className="w-full bg-red-600 hover:bg-red-700 text-white border-2 border-black rounded-lg py-2.5 text-xs font-black uppercase tracking-wider cursor-pointer shadow-[2px_2px_0px_0px_#111111] transition-transform active:translate-y-0"
+            >
+              🗑️ Reset All Orders
+            </button>
+          </div>
         </div>
       </div>
 
