@@ -4,6 +4,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import Image from 'next/image';
+import { useCart } from '@/context/CartContext';
 
 interface CheckoutModalProps {
   isOpen: boolean;
@@ -38,14 +39,8 @@ export default function CheckoutModal({ isOpen, onClose }: CheckoutModalProps) {
   const [errors, setErrors] = useState<FormErrors>({});
 
   // Pack size and quantity defaults
-  const DEFAULT_SIZES = [
-    { size: '250g', price: 299, in_stock: true },
-    { size: '500g', price: 549, in_stock: true },
-    { size: '1kg', price: 999, in_stock: true }
-  ];
-  const [sizes, setSizes] = useState<Array<{ size: string; price: number; in_stock: boolean }>>(DEFAULT_SIZES);
-  const [selectedSize, setSelectedSize] = useState<string>('250g');
-  const [quantity, setQuantity] = useState<number>(1);
+  const { cart, cartSubtotal, cartCount, clearCart } = useCart();
+
   const [whatsappPhone, setWhatsappPhone] = useState<string>('917970574329');
   const [whatsappTemplate, setWhatsappTemplate] = useState<string>('');
 
@@ -54,8 +49,7 @@ export default function CheckoutModal({ isOpen, onClose }: CheckoutModalProps) {
   const [appliedCoupon, setAppliedCoupon] = useState<{ code: string; discount_pct: number } | null>(null);
   const [couponError, setCouponError] = useState<string>('');
 
-  const activeSize = sizes.find(s => s.size === selectedSize) || sizes.find(s => s.in_stock) || sizes[0];
-  const subtotal = activeSize.price * quantity;
+  const subtotal = cartSubtotal;
   const discountAmount = appliedCoupon ? Math.round((subtotal * appliedCoupon.discount_pct) / 100) : 0;
   const totalPrice = subtotal - discountAmount;
 
@@ -98,31 +92,9 @@ export default function CheckoutModal({ isOpen, onClose }: CheckoutModalProps) {
   const [isProcessing, setIsProcessing] = useState(false);
   const [processStep, setProcessStep] = useState('');
 
-  // Fetch live product catalog sizes and settings
+  // Fetch store settings on modal open
   useEffect(() => {
-    const fetchCatalogAndSettings = async () => {
-      try {
-        const res = await fetch('/api/products');
-        const data = await res.json();
-        if (res.ok && data.success && data.products && data.products.length > 0) {
-          const product = data.products.find((p: any) => p.id === 'prod_chocolate_mix');
-          if (product && product.sizes && product.sizes.length > 0) {
-            setSizes(product.sizes);
-            
-            // Auto-select first in-stock size if current size is not in-stock or not in list
-            const currentActive = product.sizes.find((s: any) => s.size === selectedSize);
-            if (!currentActive || !currentActive.in_stock) {
-              const firstInStock = product.sizes.find((s: any) => s.in_stock);
-              if (firstInStock) {
-                setSelectedSize(firstInStock.size);
-              }
-            }
-          }
-        }
-      } catch (err) {
-        console.warn('Failed to fetch live catalog, using offline prices:', err);
-      }
-
+    const fetchSettings = async () => {
       try {
         const settingsRes = await fetch('/api/settings');
         const settingsData = await settingsRes.json();
@@ -135,12 +107,12 @@ export default function CheckoutModal({ isOpen, onClose }: CheckoutModalProps) {
           }
         }
       } catch (err) {
-        console.warn('Failed to fetch settings, using offline WhatsApp number:', err);
+        console.warn('Failed to fetch settings, using offline WhatsApp details:', err);
       }
     };
 
     if (isOpen) {
-      fetchCatalogAndSettings();
+      fetchSettings();
     }
   }, [isOpen]);
 
@@ -218,15 +190,13 @@ export default function CheckoutModal({ isOpen, onClose }: CheckoutModalProps) {
           pincode: formData.pincode,
           total_amount: totalPrice,
           payment_method: (purchaseMethod === 'razorpay' ? 'Online (Razorpay)' : 'Cash on Delivery') + (appliedCoupon ? ` [Coupon: ${appliedCoupon.code} - ${appliedCoupon.discount_pct}% off]` : ''),
-          items: [
-            {
-              id: 'prod_chocolate_mix',
-              name: 'Chocolate Dates Powder',
-              price: activeSize.price,
-              quantity,
-              size: selectedSize
-            }
-          ]
+          items: cart.map(item => ({
+            id: item.id,
+            name: item.name,
+            price: item.price,
+            quantity: item.quantity,
+            size: item.size
+          }))
         })
       });
 
@@ -248,6 +218,8 @@ export default function CheckoutModal({ isOpen, onClose }: CheckoutModalProps) {
         setProcessStep('Confirming transaction with bank...');
         await new Promise((resolve) => setTimeout(resolve, 900));
 
+        // Clear the cart
+        clearCart();
         // Redirect to thank-you with orderId
         router.push(`/thank-you?orderId=${order.id}`);
       } else {
@@ -257,6 +229,7 @@ export default function CheckoutModal({ isOpen, onClose }: CheckoutModalProps) {
 
         let message = '';
         if (whatsappTemplate && whatsappTemplate.trim()) {
+          const itemsListText = cart.map(item => `${item.name} (${item.size}) x ${item.quantity}`).join(', ');
           message = whatsappTemplate
             .replace(/{name}/g, formData.fullName)
             .replace(/{phone}/g, formData.phone)
@@ -265,12 +238,13 @@ export default function CheckoutModal({ isOpen, onClose }: CheckoutModalProps) {
             .replace(/{city}/g, formData.city)
             .replace(/{state}/g, formData.state)
             .replace(/{pincode}/g, formData.pincode)
-            .replace(/{size}/g, selectedSize)
-            .replace(/{qty}/g, String(quantity))
+            .replace(/{size}/g, itemsListText)
+            .replace(/{qty}/g, String(cartCount))
             .replace(/{order_id}/g, order.id)
             .replace(/{total_price}/g, String(totalPrice));
         } else {
-          message = `Hello Nutri Dates Team!\n\nI want to order Chocolate Dates Nutrition Powder (${selectedSize}) x ${quantity}.\n\nOrder ID: ${order.id}\n\nMy Delivery Details:\n- Name: ${formData.fullName}\n- Phone: ${formData.phone}\n- Email: ${formData.email}\n- Address: ${formData.address}, ${formData.city}, ${formData.state} - ${formData.pincode}\n\nOrder Total: ₹${totalPrice} (Cash on Delivery / UPI)\n\nPlease confirm my order. Thanks!`;
+          const itemsListText = cart.map(item => `- ${item.name} (${item.size}) x ${item.quantity}`).join('\n');
+          message = `Hello Nutri Dates Team!\n\nI want to order:\n${itemsListText}\n\nOrder ID: ${order.id}\n\nMy Delivery Details:\n- Name: ${formData.fullName}\n- Phone: ${formData.phone}\n- Email: ${formData.email}\n- Address: ${formData.address}, ${formData.city}, ${formData.state} - ${formData.pincode}\n\nOrder Total: ₹${totalPrice} (Cash on Delivery / UPI)\n\nPlease confirm my order. Thanks!`;
         }
         
         const encodedMessage = encodeURIComponent(message);
@@ -279,6 +253,8 @@ export default function CheckoutModal({ isOpen, onClose }: CheckoutModalProps) {
         // Open whatsapp tab
         window.open(whatsappUrl, '_blank');
         
+        // Clear the cart
+        clearCart();
         // Redirect page to thank-you with orderId
         router.push(`/thank-you?orderId=${order.id}`);
       }
@@ -317,7 +293,7 @@ export default function CheckoutModal({ isOpen, onClose }: CheckoutModalProps) {
                   Secure Checkout
                 </h3>
                 <p className="text-xs font-bold text-[#4E3A2E] mt-0.5 uppercase tracking-wider">
-                  Nutri Dates · {selectedSize} Pack (₹{activeSize.price})
+                  Nutri Dates · {cartCount} Items (₹{cartSubtotal})
                 </p>
               </div>
               {!isProcessing && (
@@ -513,65 +489,7 @@ export default function CheckoutModal({ isOpen, onClose }: CheckoutModalProps) {
                     </div>
                   </div>
 
-                  {/* Step 1.5: Select Pack Size & Quantity */}
-                  <div className="border-t-2 border-stone-200 pt-5">
-                    <h4 className="text-xs font-black uppercase tracking-widest text-[#FF5000] mb-4">
-                      1.5 Select Size & Quantity
-                    </h4>
-                    <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-                      {/* Size Selector */}
-                      <div>
-                        <label className="block text-xs font-black uppercase text-[#111111] mb-1.5">
-                          Select Pack Size
-                        </label>
-                        <div className="flex gap-2">
-                          {sizes.map((s) => (
-                            <button
-                              key={s.size}
-                              type="button"
-                              disabled={!s.in_stock}
-                              onClick={() => setSelectedSize(s.size)}
-                              className={`flex-1 rounded-lg border-2 py-2 text-[10px] sm:text-xs font-black uppercase tracking-wider transition-all cursor-pointer ${
-                                !s.in_stock
-                                  ? 'border-stone-200 bg-stone-100 text-stone-400 cursor-not-allowed opacity-50'
-                                  : selectedSize === s.size
-                                  ? 'border-black bg-[#FF5000] text-white shadow-[2px_2px_0px_0px_#111111]'
-                                  : 'border-stone-300 bg-white text-[#4E3A2E] hover:border-black'
-                              }`}
-                            >
-                              {s.size} (₹{s.price}){!s.in_stock && ' - OUT'}
-                            </button>
-                          ))}
-                        </div>
-                      </div>
-
-                      {/* Quantity Selector */}
-                      <div>
-                        <label className="block text-xs font-black uppercase text-[#111111] mb-1.5">
-                          Quantity
-                        </label>
-                        <div className="flex items-center border-2 border-black rounded-lg overflow-hidden bg-white max-w-[140px]">
-                          <button
-                            type="button"
-                            onClick={() => setQuantity(q => Math.max(1, q - 1))}
-                            className="px-3 py-2 text-sm font-black hover:bg-stone-100 border-r border-black select-none cursor-pointer"
-                          >
-                            -
-                          </button>
-                          <span className="flex-1 text-center font-bold text-sm text-black">
-                            {quantity}
-                          </span>
-                          <button
-                            type="button"
-                            onClick={() => setQuantity(q => Math.min(10, q + 1))}
-                            className="px-3 py-2 text-sm font-black hover:bg-stone-100 border-l border-black select-none cursor-pointer"
-                          >
-                            +
-                          </button>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
+                  {/* Pack sizes and quantity are managed in the cart drawer */}
 
                   {/* Step 2: Buying Options */}
                   <div className="border-t-2 border-stone-200 pt-5">
@@ -697,17 +615,19 @@ export default function CheckoutModal({ isOpen, onClose }: CheckoutModalProps) {
                   <div className="rounded-lg bg-[#F9F7F5] p-4 border-2 border-black flex items-center gap-4">
                     <div className="relative h-16 w-16 shrink-0 border-2 border-black bg-white rounded-lg overflow-hidden">
                       <Image
-                        src="/images/mockup-front.jpg"
-                        alt="Nutri Dates Pack"
+                        src="/images/logo-uploaded.jpg"
+                        alt="Nutri Dates Cart"
                         fill
-                        className="object-cover"
+                        className="object-contain"
                       />
                     </div>
                     <div className="flex-1">
-                      <div className="flex justify-between text-xs font-bold text-[#4E3A2E] mb-1">
-                        <span>Chocolate Dates Nutrition Powder ({selectedSize})</span>
-                        <span>₹{activeSize.price} x {quantity}</span>
-                      </div>
+                      {cart.map((item) => (
+                        <div key={`${item.id}-${item.size}`} className="flex justify-between text-xs font-bold text-[#4E3A2E] mb-1">
+                          <span>{item.name} ({item.size})</span>
+                          <span>₹{item.price} x {item.quantity}</span>
+                        </div>
+                      ))}
                       {appliedCoupon && (
                         <div className="flex justify-between text-xs font-bold text-[#4E3A2E] mb-1">
                           <span>Discount ({appliedCoupon.code} - {appliedCoupon.discount_pct}%)</span>

@@ -1,6 +1,8 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useEffect } from 'react';
+import CartDrawer from "@/components/CartDrawer";
+import { useCart } from "@/context/CartContext";
 import Hero from "@/components/Hero";
 import TrustBar from "@/components/TrustBar";
 import ProblemSection from "@/components/ProblemSection";
@@ -21,28 +23,28 @@ import AmbassadorSection from "@/components/AmbassadorSection";
 import ProductComparison from "@/components/ProductComparison";
 
 export default function Home() {
-  const [isCheckoutOpen, setIsCheckoutOpen] = useState(false);
+  const { isCheckoutOpen, setIsCheckoutOpen, setIsCartOpen } = useCart();
 
   useEffect(() => {
     const handleHashChange = () => {
-      if (window.location.hash === '#razorpay') {
+      if (window.location.hash === '#checkout' || window.location.hash === '#razorpay') {
         setIsCheckoutOpen(true);
+      } else if (window.location.hash === '#cart') {
+        setIsCartOpen(true);
       }
     };
 
     window.addEventListener('hashchange', handleHashChange);
-    // Check initially on mount
     handleHashChange();
 
     return () => {
       window.removeEventListener('hashchange', handleHashChange);
     };
-  }, []);
+  }, [setIsCheckoutOpen, setIsCartOpen]);
 
   const closeCheckout = () => {
     setIsCheckoutOpen(false);
-    // Remove the hash from URL without reloading
-    if (window.location.hash === '#razorpay') {
+    if (window.location.hash === '#checkout' || window.location.hash === '#razorpay' || window.location.hash === '#cart') {
       window.history.replaceState(
         null,
         '',
@@ -106,6 +108,9 @@ export default function Home() {
 
       {/* Secure Checkout Modal (Razorpay + WhatsApp integration) */}
       <CheckoutModal isOpen={isCheckoutOpen} onClose={closeCheckout} />
+
+      {/* Cart Drawer Overlay */}
+      <CartDrawer />
     </main>
   );
 }

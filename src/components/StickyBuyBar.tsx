@@ -2,9 +2,11 @@
 
 import { useEffect, useState } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
+import { useCart } from '@/context/CartContext';
 
 export default function StickyBuyBar() {
   const [visible, setVisible] = useState(false);
+  const { addToCart } = useCart();
 
   const whatsappUrl =
     'https://wa.me/917970574329?text=Hello%20Nutri%20Dates%20Team%2C%0A%0AI%20would%20like%20to%20order%20Chocolate%20Dates%20Nutrition%20Powder%20(250g).%0A%0APlease%20assist%20me%20with%20the%20purchase.';
@@ -59,14 +61,20 @@ export default function StickyBuyBar() {
               {/* Actions */}
               <div className="flex items-center gap-3">
                 {/* Buy Now */}
-                <motion.a
-                  href="#razorpay"
+                <motion.button
+                  onClick={() => addToCart({
+                    id: 'prod_chocolate_mix',
+                    name: 'Chocolate Dates Nutrition Powder',
+                    price: 299,
+                    quantity: 1,
+                    size: '250g'
+                  })}
                   whileHover={{ y: -1 }}
                   whileTap={{ y: 0 }}
-                  className="rounded-lg border-2 border-black bg-[#FF5000] px-5 py-2.5 text-xs font-black uppercase tracking-wider text-white shadow-[2px_2px_0px_0px_rgba(255,255,255,0.15)]"
+                  className="rounded-lg border-2 border-black bg-[#FF5000] px-5 py-2.5 text-xs font-black uppercase tracking-wider text-white shadow-[2px_2px_0px_0px_rgba(255,255,255,0.15)] cursor-pointer"
                 >
                   Buy Now
-                </motion.a>
+                </motion.button>
 
                 {/* WhatsApp button */}
                 <motion.a

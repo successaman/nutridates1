@@ -2,6 +2,7 @@
 
 import { motion } from 'framer-motion';
 import Image from 'next/image';
+import { useCart } from '@/context/CartContext';
 
 const containerVariants = {
   hidden: { opacity: 0 },
@@ -35,10 +36,22 @@ const floatVariants = {
 };
 
 export default function Hero() {
+  const { setIsCartOpen, cartCount, addToCart } = useCart();
+
   const whatsappUrl =
     'https://wa.me/917970574329?text=Hello%20Nutri%20Dates%20Team%2C%0A%0AI%20would%20like%20to%20order%20Chocolate%20Dates%20Nutrition%20Powder%20(250g).%0A%0APlease%20assist%20me%20with%20the%20purchase.';
   
   const instagramUrl = 'https://www.instagram.com/nutridatesofficial/';
+
+  const handleBuyNowDirect = () => {
+    addToCart({
+      id: 'prod_chocolate_mix',
+      name: 'Chocolate Dates Nutrition Powder',
+      price: 299,
+      quantity: 1,
+      size: '250g',
+    });
+  };
 
   return (
     <section
@@ -68,28 +81,44 @@ export default function Hero() {
             </div>
           </div>
           
-          {/* Instagram Button */}
-          <a
-            href={instagramUrl}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="flex items-center gap-2 rounded-lg border-2 border-black px-4 py-2 text-xs font-black uppercase tracking-wider text-black bg-white shadow-[2px_2px_0px_0px_#111111] hover:bg-[#FF5000] hover:text-white transition-colors cursor-pointer"
-          >
-            <svg
-              className="h-4 w-4"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="2.5"
-              strokeLinecap="round"
-              strokeLinejoin="round"
+          {/* Actions: Cart & Instagram */}
+          <div className="flex items-center gap-3">
+            {/* Cart Icon Button */}
+            <button
+              onClick={() => setIsCartOpen(true)}
+              className="flex items-center gap-2 rounded-lg border-2 border-black px-4 py-2 text-xs font-black uppercase tracking-wider text-black bg-white shadow-[2px_2px_0px_0px_#111111] hover:bg-[#FF5000] hover:text-white transition-colors cursor-pointer"
             >
-              <rect x="2" y="2" width="20" height="20" rx="5" ry="5"></rect>
-              <path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z"></path>
-              <line x1="17.5" y1="6.5" x2="17.51" y2="6.5"></line>
-            </svg>
-            Instagram
-          </a>
+              🛒 Cart
+              {cartCount > 0 && (
+                <span className="bg-[#FF5000] text-white border border-black text-[10px] px-1.5 py-0.5 rounded-md leading-none ml-1">
+                  {cartCount}
+                </span>
+              )}
+            </button>
+
+            {/* Instagram Button */}
+            <a
+              href={instagramUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="flex items-center gap-2 rounded-lg border-2 border-black px-4 py-2 text-xs font-black uppercase tracking-wider text-black bg-white shadow-[2px_2px_0px_0px_#111111] hover:bg-[#FF5000] hover:text-white transition-colors cursor-pointer"
+            >
+              <svg
+                className="h-4 w-4"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2.5"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              >
+                <rect x="2" y="2" width="20" height="20" rx="5" ry="5"></rect>
+                <path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z"></path>
+                <line x1="17.5" y1="6.5" x2="17.51" y2="6.5"></line>
+              </svg>
+              Instagram
+            </a>
+          </div>
         </div>
       </div>
 
@@ -137,15 +166,15 @@ export default function Hero() {
             variants={itemVariants}
             className="mt-10 flex flex-col w-full sm:w-auto gap-4 sm:flex-row"
           >
-            {/* Buy Now (Razorpay) */}
-            <motion.a
-              href="#razorpay"
+            {/* Buy Now (Online) */}
+            <motion.button
+              onClick={handleBuyNowDirect}
               whileHover={{ y: -2 }}
               whileTap={{ y: 0 }}
-              className="inline-flex items-center justify-center rounded-lg bg-[#FF5000] px-8 py-4 text-base font-bold uppercase tracking-wider text-white border-2 border-black shadow-[4px_4px_0px_0px_#111111] transition-transform"
+              className="inline-flex items-center justify-center rounded-lg bg-[#FF5000] px-8 py-4 text-base font-bold uppercase tracking-wider text-white border-2 border-black shadow-[4px_4px_0px_0px_#111111] transition-transform cursor-pointer"
             >
               Buy Now (Online)
-            </motion.a>
+            </motion.button>
 
             {/* Buy on WhatsApp */}
             <motion.a

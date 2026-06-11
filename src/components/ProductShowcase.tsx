@@ -2,6 +2,7 @@
 
 import Image from 'next/image';
 import { motion } from 'framer-motion';
+import { useCart } from '@/context/CartContext';
 
 const benefits = [
   'Real Dates, Oats & Dry Fruits',
@@ -12,6 +13,7 @@ const benefits = [
 ];
 
 export default function ProductShowcase() {
+  const { addToCart } = useCart();
   return (
     <section
       className="w-full py-20 md:py-28 overflow-hidden bg-[#F9F7F5] border-b border-[#E3DCD5]"
@@ -100,14 +102,20 @@ export default function ProductShowcase() {
             </ul>
 
             {/* CTA Button */}
-            <motion.a
-              href="#razorpay"
-              className="inline-flex self-start items-center justify-center rounded-lg border-2 border-black bg-[#111111] px-8 py-4 text-sm md:text-base font-bold uppercase tracking-wider text-white shadow-[4px_4px_0px_0px_#FF5000] hover:bg-[#FF5000] hover:shadow-[4px_4px_0px_0px_#111111] transition-all"
+            <motion.button
+              onClick={() => addToCart({
+                id: 'prod_chocolate_mix',
+                name: 'Chocolate Dates Nutrition Powder',
+                price: 299,
+                quantity: 1,
+                size: '250g',
+              })}
+              className="inline-flex self-start items-center justify-center rounded-lg border-2 border-black bg-[#111111] px-8 py-4 text-sm md:text-base font-bold uppercase tracking-wider text-white shadow-[4px_4px_0px_0px_#FF5000] hover:bg-[#FF5000] hover:shadow-[4px_4px_0px_0px_#111111] transition-all cursor-pointer"
               whileHover={{ y: -2 }}
               whileTap={{ y: 0 }}
             >
               Order Now — ₹299
-            </motion.a>
+            </motion.button>
           </motion.div>
         </div>
       </div>

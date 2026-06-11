@@ -85,6 +85,28 @@ const DEFAULT_PRODUCTS: Product[] = [
     ],
     stock_status: 'in_stock',
     created_at: new Date().toISOString()
+  },
+  {
+    id: 'prod_vanilla_mix',
+    name: 'Vanilla Dates Oats Mix',
+    description: 'Date-Based Vanilla Oats Mix with Premium Almonds and Cardamom. 100% natural, sugar-free energy mix.',
+    sizes: [
+      { size: '250g', price: 299, original_price: 349, in_stock: true },
+      { size: '500g', price: 549, original_price: 699, in_stock: true },
+      { size: '1kg', price: 999, original_price: 1299, in_stock: true }
+    ],
+    stock_status: 'in_stock',
+    created_at: new Date().toISOString()
+  },
+  {
+    id: 'prod_shaker',
+    name: 'Premium Shaker Bottle',
+    description: 'Leakproof, BPA-Free 600ml shaker bottle with metal blending whisk for perfect date milkshakes.',
+    sizes: [
+      { size: 'Standard', price: 149, original_price: 199, in_stock: true }
+    ],
+    stock_status: 'in_stock',
+    created_at: new Date().toISOString()
   }
 ];
 
@@ -284,18 +306,55 @@ export const db = {
   // 2. PRODUCTS CRUD
   async getProducts(): Promise<Product[]> {
     if (supabase) {
-      const { data, error } = await supabase
-        .from('products')
-        .select('*')
-        .order('created_at', { ascending: true });
+      try {
+        const { data, error } = await supabase
+          .from('products')
+          .select('*')
+          .order('created_at', { ascending: true });
 
-      if (!error && data && data.length > 0) {
-        return data as Product[];
+        if (!error && data) {
+          // Check for any missing default products and seed them
+          const existingIds = data.map((p: any) => p.id);
+          const missingProducts = DEFAULT_PRODUCTS.filter(p => !existingIds.includes(p.id));
+
+          if (missingProducts.length > 0) {
+            console.log('Seeding missing products to Supabase:', missingProducts.map(p => p.id));
+            const { error: seedError } = await supabase
+              .from('products')
+              .upsert(missingProducts);
+            
+            if (!seedError) {
+              const { data: refetchedData } = await supabase
+                .from('products')
+                .select('*')
+                .order('created_at', { ascending: true });
+              if (refetchedData) return refetchedData as Product[];
+            } else {
+              console.error('Error seeding products to Supabase:', seedError.message);
+            }
+          }
+          if (data.length > 0) {
+            return data as Product[];
+          }
+        }
+      } catch (err: any) {
+        console.warn('Error fetching or seeding products from Supabase:', err.message);
       }
-      console.warn('Supabase getProducts failed, using local JSON DB:', error?.message);
     }
+
     const localDb = readJsonDb();
-    return localDb.products || DEFAULT_PRODUCTS;
+    let localProducts = localDb.products || [];
+    
+    // Seed locally if missing
+    const existingIds = localProducts.map((p: any) => p.id);
+    const missingProducts = DEFAULT_PRODUCTS.filter(p => !existingIds.includes(p.id));
+    if (missingProducts.length > 0) {
+      localProducts = [...localProducts, ...missingProducts];
+      localDb.products = localProducts;
+      writeJsonDb(localDb);
+    }
+
+    return localProducts;
   },
 
   async updateProduct(id: string, updates: Partial<Product>): Promise<Product | null> {
