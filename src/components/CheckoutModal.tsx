@@ -37,6 +37,18 @@ export default function CheckoutModal({ isOpen, onClose }: CheckoutModalProps) {
   // Validation errors
   const [errors, setErrors] = useState<FormErrors>({});
 
+  // Pack size and quantity
+  const SIZES = [
+    { size: '250g', price: 299 },
+    { size: '500g', price: 549 },
+    { size: '1kg', price: 999 }
+  ];
+  const [selectedSize, setSelectedSize] = useState<'250g' | '500g' | '1kg'>('250g');
+  const [quantity, setQuantity] = useState<number>(1);
+
+  const activeSize = SIZES.find(s => s.size === selectedSize) || SIZES[0];
+  const totalPrice = activeSize.price * quantity;
+
   // Payment Option selection: 'razorpay' or 'whatsapp'
   const [purchaseMethod, setPurchaseMethod] = useState<'razorpay' | 'whatsapp'>('razorpay');
 
@@ -103,34 +115,73 @@ export default function CheckoutModal({ isOpen, onClose }: CheckoutModalProps) {
 
     setIsProcessing(true);
 
-    if (purchaseMethod === 'razorpay') {
-      // Simulate Razorpay Gateway steps
-      setProcessStep('Connecting to Razorpay Secure API...');
-      await new Promise((resolve) => setTimeout(resolve, 800));
-      
-      setProcessStep('Verifying payment connection...');
-      await new Promise((resolve) => setTimeout(resolve, 800));
-      
-      setProcessStep('Confirming transaction with bank...');
-      await new Promise((resolve) => setTimeout(resolve, 900));
+    try {
+      setProcessStep('Creating order in database...');
+      const response = await fetch('/api/orders', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          customer_name: formData.fullName,
+          phone: formData.phone,
+          email: formData.email,
+          address: formData.address,
+          city: formData.city,
+          state: formData.state,
+          pincode: formData.pincode,
+          total_amount: totalPrice,
+          payment_method: purchaseMethod === 'razorpay' ? 'Online (Razorpay)' : 'Cash on Delivery',
+          items: [
+            {
+              id: 'prod_chocolate_mix',
+              name: 'Chocolate Dates Powder',
+              price: activeSize.price,
+              quantity,
+              size: selectedSize
+            }
+          ]
+        })
+      });
 
-      // Redirect to thank-you
-      router.push('/thank-you');
-    } else {
-      // WhatsApp order
-      setProcessStep('Formatting your order details...');
-      await new Promise((resolve) => setTimeout(resolve, 600));
+      const resData = await response.json();
+      if (!response.ok || !resData.success) {
+        throw new Error(resData.error || 'Failed to place order');
+      }
 
-      const message = `Hello Nutri Dates Team!\n\nI want to order Chocolate Dates Nutrition Powder (250g).\n\nMy Delivery Details:\n- Name: ${formData.fullName}\n- Phone: ${formData.phone}\n- Email: ${formData.email}\n- Address: ${formData.address}, ${formData.city}, ${formData.state} - ${formData.pincode}\n\nOrder Total: ₹299 (Cash on Delivery / GPay on delivery)\n\nPlease confirm my order. Thanks!`;
-      
-      const encodedMessage = encodeURIComponent(message);
-      const whatsappUrl = `https://wa.me/917970574329?text=${encodedMessage}`;
-      
-      // Open whatsapp tab
-      window.open(whatsappUrl, '_blank');
-      
-      // Redirect page to thank-you
-      router.push('/thank-you');
+      const order = resData.order;
+
+      if (purchaseMethod === 'razorpay') {
+        // Simulate Razorpay Gateway steps
+        setProcessStep('Connecting to Razorpay Secure API...');
+        await new Promise((resolve) => setTimeout(resolve, 800));
+        
+        setProcessStep('Verifying payment connection...');
+        await new Promise((resolve) => setTimeout(resolve, 800));
+        
+        setProcessStep('Confirming transaction with bank...');
+        await new Promise((resolve) => setTimeout(resolve, 900));
+
+        // Redirect to thank-you with orderId
+        router.push(`/thank-you?orderId=${order.id}`);
+      } else {
+        // WhatsApp order
+        setProcessStep('Formatting your order details...');
+        await new Promise((resolve) => setTimeout(resolve, 600));
+
+        const message = `Hello Nutri Dates Team!\n\nI want to order Chocolate Dates Nutrition Powder (${selectedSize}) x ${quantity}.\n\nOrder ID: ${order.id}\n\nMy Delivery Details:\n- Name: ${formData.fullName}\n- Phone: ${formData.phone}\n- Email: ${formData.email}\n- Address: ${formData.address}, ${formData.city}, ${formData.state} - ${formData.pincode}\n\nOrder Total: ₹${totalPrice} (Cash on Delivery / UPI)\n\nPlease confirm my order. Thanks!`;
+        
+        const encodedMessage = encodeURIComponent(message);
+        const whatsappUrl = `https://wa.me/917970574329?text=${encodedMessage}`;
+        
+        // Open whatsapp tab
+        window.open(whatsappUrl, '_blank');
+        
+        // Redirect page to thank-you with orderId
+        router.push(`/thank-you?orderId=${order.id}`);
+      }
+    } catch (err: any) {
+      console.error('Checkout error:', err);
+      alert('Checkout failed: ' + err.message);
+      setIsProcessing(false);
     }
   };
 
@@ -358,6 +409,63 @@ export default function CheckoutModal({ isOpen, onClose }: CheckoutModalProps) {
                     </div>
                   </div>
 
+                  {/* Step 1.5: Select Pack Size & Quantity */}
+                  <div className="border-t-2 border-stone-200 pt-5">
+                    <h4 className="text-xs font-black uppercase tracking-widest text-[#FF5000] mb-4">
+                      1.5 Select Size & Quantity
+                    </h4>
+                    <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                      {/* Size Selector */}
+                      <div>
+                        <label className="block text-xs font-black uppercase text-[#111111] mb-1.5">
+                          Select Pack Size
+                        </label>
+                        <div className="flex gap-2">
+                          {SIZES.map((s) => (
+                            <button
+                              key={s.size}
+                              type="button"
+                              onClick={() => setSelectedSize(s.size as any)}
+                              className={`flex-1 rounded-lg border-2 py-2 text-xs font-black uppercase tracking-wider transition-all cursor-pointer ${
+                                selectedSize === s.size
+                                  ? 'border-black bg-[#FF5000] text-white shadow-[2px_2px_0px_0px_#111111]'
+                                  : 'border-stone-300 bg-white text-[#4E3A2E] hover:border-black'
+                              }`}
+                            >
+                              {s.size} (₹{s.price})
+                            </button>
+                          ))}
+                        </div>
+                      </div>
+
+                      {/* Quantity Selector */}
+                      <div>
+                        <label className="block text-xs font-black uppercase text-[#111111] mb-1.5">
+                          Quantity
+                        </label>
+                        <div className="flex items-center border-2 border-black rounded-lg overflow-hidden bg-white max-w-[140px]">
+                          <button
+                            type="button"
+                            onClick={() => setQuantity(q => Math.max(1, q - 1))}
+                            className="px-3 py-2 text-sm font-black hover:bg-stone-100 border-r border-black select-none cursor-pointer"
+                          >
+                            -
+                          </button>
+                          <span className="flex-1 text-center font-bold text-sm text-black">
+                            {quantity}
+                          </span>
+                          <button
+                            type="button"
+                            onClick={() => setQuantity(q => Math.min(10, q + 1))}
+                            className="px-3 py-2 text-sm font-black hover:bg-stone-100 border-l border-black select-none cursor-pointer"
+                          >
+                            +
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
                   {/* Step 2: Buying Options */}
                   <div className="border-t-2 border-stone-200 pt-5">
                     <h4 className="text-xs font-black uppercase tracking-widest text-[#FF5000] mb-4">
@@ -448,8 +556,8 @@ export default function CheckoutModal({ isOpen, onClose }: CheckoutModalProps) {
                     </div>
                     <div className="flex-1">
                       <div className="flex justify-between text-xs font-bold text-[#4E3A2E] mb-1">
-                        <span>Chocolate Dates Nutrition Powder (250g)</span>
-                        <span>₹299</span>
+                        <span>Chocolate Dates Nutrition Powder ({selectedSize})</span>
+                        <span>₹{activeSize.price} x {quantity}</span>
                       </div>
                       <div className="flex justify-between text-xs font-bold text-[#4E3A2E] mb-2">
                         <span>Delivery Shipping</span>
@@ -458,7 +566,7 @@ export default function CheckoutModal({ isOpen, onClose }: CheckoutModalProps) {
                       <hr className="border-stone-200 my-1" />
                       <div className="flex justify-between text-sm font-black text-[#111111] uppercase">
                         <span>Amount Payable</span>
-                        <span>₹299</span>
+                        <span>₹{totalPrice}</span>
                       </div>
                     </div>
                   </div>
