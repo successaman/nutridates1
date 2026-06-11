@@ -1,37 +1,5 @@
 {
-  "orders": [
-    {
-      "customer_name": "aman Kumar",
-      "phone": "7209465262",
-      "email": "udaancraftmedia@gmail.com",
-      "address": "indrapurichowk lalkothi hazaribag",
-      "city": "hazaribagh",
-      "state": "Jharkhand",
-      "pincode": "825301",
-      "total_amount": 299,
-      "payment_method": "Online (Razorpay)",
-      "status": "pending",
-      "items": [
-        {
-          "id": "prod_chocolate_mix",
-          "name": "Chocolate Dates Powder",
-          "price": 299,
-          "quantity": 1,
-          "size": "250g"
-        }
-      ],
-      "timeline": [
-        {
-          "status": "pending",
-          "timestamp": "2026-06-11T04:22:50.682Z",
-          "note": "Order placed by customer."
-        }
-      ],
-      "id": "ND-2026-1001",
-      "created_at": "2026-06-11T04:22:51.267Z",
-      "updated_at": "2026-06-11T04:22:51.267Z"
-    }
-  ],
+  "orders": [],
   "products": [
     {
       "id": "prod_chocolate_mix",

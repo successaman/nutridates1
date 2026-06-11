@@ -521,91 +521,120 @@ export default function AdminOrdersPage() {
 
     {/* Printable Invoice Container (Only rendered in printing) */}
     {selectedOrder && (
-      <div className="hidden print:block bg-white text-black p-8 font-sans w-full max-w-[800px] mx-auto text-xs">
-        <div className="flex justify-between items-start border-b-4 border-black pb-4">
-          <div>
-            <h1 className="text-2xl font-black uppercase tracking-tight text-black">NUTRI DATES</h1>
-            <p className="text-[9px] font-bold text-stone-500 uppercase tracking-widest">India's Premium Date-Based Nutrition</p>
-            <p className="mt-1.5 font-semibold text-stone-600 text-[10px] leading-tight">
-              FSSAI Lic No: 21124233000981<br />
-              Support: hello@nutridates.in | WhatsApp: +91 79705 74329
-            </p>
-          </div>
-          <div className="text-right">
-            <h2 className="text-base font-black uppercase tracking-wider text-orange-600">TAX INVOICE</h2>
-            <p className="font-extrabold text-black">Invoice ID: {selectedOrder.id}</p>
-            <p className="text-stone-500">Date: {new Date(selectedOrder.created_at).toLocaleDateString('en-IN')}</p>
-          </div>
-        </div>
-
-        <div className="grid grid-cols-2 gap-8 my-6">
-          <div>
-            <h3 className="font-black uppercase text-[9px] tracking-wider text-stone-400 mb-1">Customer / Shipping Address</h3>
-            <div className="font-bold border border-stone-200 p-3 rounded text-[11px] leading-relaxed">
-              <p className="text-sm font-black uppercase text-black">{selectedOrder.customer_name}</p>
-              <p className="text-stone-600 mt-1">Phone: {selectedOrder.phone}</p>
-              {selectedOrder.email && <p className="text-stone-600">Email: {selectedOrder.email}</p>}
-              <p className="mt-2 text-stone-700 uppercase">
-                {selectedOrder.address}<br />
-                {selectedOrder.city}, {selectedOrder.state} - {selectedOrder.pincode}
+      <div className="hidden print:block bg-white text-black p-4 font-sans w-full max-w-[800px] mx-auto text-xs" style={{ boxSizing: 'border-box', pageBreakAfter: 'avoid' }}>
+        {/* Inline CSS overrides for printing size & margins */}
+        <style dangerouslySetInnerHTML={{ __html: `
+          @media print {
+            html, body {
+              height: 100%;
+              background-color: #fff !important;
+              color: #000 !important;
+              margin: 0 !important;
+              padding: 0 !important;
+            }
+            @page {
+              size: A4 portrait;
+              margin: 8mm 12mm 8mm 12mm;
+            }
+            .print-invoice-container {
+              max-height: 270mm; /* standard A4 height is 297mm */
+              overflow: hidden;
+            }
+          }
+        `}} />
+        
+        <div className="print-invoice-container flex flex-col justify-between h-full space-y-4">
+          {/* Header block */}
+          <div className="flex justify-between items-start border-b border-stone-800 pb-3">
+            <div>
+              <h1 className="text-xl font-black uppercase tracking-tight text-black">NUTRI DATES</h1>
+              <p className="text-[9px] font-bold text-stone-500 uppercase tracking-widest leading-none">India's Premium Date-Based Nutrition</p>
+              <p className="mt-1.5 font-semibold text-stone-600 text-[10px] leading-tight">
+                FSSAI Lic No: 21124233000981<br />
+                Support: hello@nutridates.in | WhatsApp: +91 79705 74329
               </p>
             </div>
-          </div>
-          <div>
-            <h3 className="font-black uppercase text-[9px] tracking-wider text-stone-400 mb-1">Billing / Store Details</h3>
-            <div className="font-semibold border border-stone-200 p-3 rounded text-stone-600 text-[11px] leading-relaxed">
-              <p className="font-bold uppercase text-black">Nutri Dates Enterprise</p>
-              <p className="mt-1">Main Store Road, Hazaribagh</p>
-              <p>Jharkhand, India - 825301</p>
-              <p className="mt-2 text-[10px] text-stone-500 uppercase font-bold">GSTIN: MockGSTIN9817</p>
+            <div className="text-right">
+              <h2 className="text-sm font-black uppercase tracking-wider text-orange-600 leading-none mb-1">TAX INVOICE</h2>
+              <p className="font-extrabold text-black text-[11px]">Invoice ID: {selectedOrder.id}</p>
+              <p className="text-stone-500 text-[10px]">Date: {new Date(selectedOrder.created_at).toLocaleDateString('en-IN')}</p>
             </div>
           </div>
-        </div>
 
-        <table className="w-full text-left border-2 border-black mb-6">
-          <thead>
-            <tr className="bg-stone-100 border-b-2 border-black uppercase text-[9px] font-black text-black">
-              <th className="p-3">Product Description</th>
-              <th className="p-3 text-center">Pack Size</th>
-              <th className="p-3 text-center">Quantity</th>
-              <th className="p-3 text-right">Unit Price</th>
-              <th className="p-3 text-right">Total Price</th>
-            </tr>
-          </thead>
-          <tbody>
-            {selectedOrder.items.map((item, idx) => (
-              <tr key={idx} className="border-b border-stone-200 text-xs font-bold text-stone-800">
-                <td className="p-3 uppercase">{item.name}</td>
-                <td className="p-3 text-center uppercase">{item.size}</td>
-                <td className="p-3 text-center">{item.quantity}</td>
-                <td className="p-3 text-right">₹{item.price}</td>
-                <td className="p-3 text-right">₹{item.price * item.quantity}</td>
-              </tr>
-            ))}
-            <tr className="font-bold border-t-2 border-black text-stone-600">
-              <td colSpan={3} className="p-3"></td>
-              <td className="p-3 text-right uppercase">Shipping</td>
-              <td className="p-3 text-right text-emerald-600 uppercase font-black">Free</td>
-            </tr>
-            <tr className="font-black text-sm border-t border-stone-200 uppercase text-black">
-              <td colSpan={3} className="p-3"></td>
-              <td className="p-3 text-right">Grand Total</td>
-              <td className="p-3 text-right text-orange-600">₹{selectedOrder.total_amount}</td>
-            </tr>
-          </tbody>
-        </table>
-
-        <div className="flex justify-between items-end border-t border-dashed border-stone-300 pt-4 mt-8">
-          <div>
-            <p className="font-bold uppercase text-[9px] text-stone-400">Payment Terms</p>
-            <p className="font-extrabold uppercase text-[#111111]">{selectedOrder.payment_method}</p>
-            <p className="text-[10px] text-stone-500 mt-1 font-semibold">Thank you for ordering healthy date powder with Nutri Dates!</p>
-          </div>
-          <div className="text-center">
-            <div className="border border-stone-400 w-32 h-10 flex items-center justify-center font-mono font-bold tracking-widest text-[9px] uppercase text-stone-400 mb-1">
-              ||||| {selectedOrder.id} |||||
+          {/* Addresses block */}
+          <div className="grid grid-cols-2 gap-6 my-2">
+            <div>
+              <h3 className="font-black uppercase text-[8px] tracking-wider text-stone-400 mb-1">Customer / Shipping Address</h3>
+              <div className="font-bold border border-stone-300 p-2.5 rounded text-[10px] leading-normal bg-stone-50/50">
+                <p className="text-xs font-black uppercase text-black">{selectedOrder.customer_name}</p>
+                <p className="text-stone-600 mt-1">Phone: {selectedOrder.phone}</p>
+                {selectedOrder.email && <p className="text-stone-600">Email: {selectedOrder.email}</p>}
+                <p className="mt-1 text-stone-700 uppercase">
+                  {selectedOrder.address}<br />
+                  {selectedOrder.city}, {selectedOrder.state} - {selectedOrder.pincode}
+                </p>
+              </div>
             </div>
-            <p className="text-[9px] font-bold text-stone-400 uppercase">Authorized Signature</p>
+            <div>
+              <h3 className="font-black uppercase text-[8px] tracking-wider text-stone-400 mb-1">Billing / Store Details</h3>
+              <div className="font-semibold border border-stone-300 p-2.5 rounded text-stone-600 text-[10px] leading-normal bg-stone-50/50">
+                <p className="font-bold uppercase text-black">Nutri Dates Enterprise</p>
+                <p className="mt-0.5">Main Store Road, Hazaribagh</p>
+                <p>Jharkhand, India - 825301</p>
+                <p className="mt-1 text-[9px] text-stone-500 uppercase font-bold">GSTIN: MockGSTIN9817</p>
+              </div>
+            </div>
+          </div>
+
+          {/* Table of Items */}
+          <div className="flex-1 min-h-[120px]">
+            <table className="w-full text-left border border-stone-300 border-collapse">
+              <thead>
+                <tr className="bg-stone-100 border-b border-stone-300 uppercase text-[9px] font-black text-black">
+                  <th className="p-2 border-r border-stone-300">Product Description</th>
+                  <th className="p-2 text-center border-r border-stone-300 w-20">Pack Size</th>
+                  <th className="p-2 text-center border-r border-stone-300 w-16">Qty</th>
+                  <th className="p-2 text-right border-r border-stone-300 w-24">Unit Price</th>
+                  <th className="p-2 text-right w-28">Total Price</th>
+                </tr>
+              </thead>
+              <tbody>
+                {selectedOrder.items.map((item, idx) => (
+                  <tr key={idx} className="border-b border-stone-200 text-[10px] font-bold text-stone-800">
+                    <td className="p-2 border-r border-stone-300 uppercase">{item.name}</td>
+                    <td className="p-2 text-center border-r border-stone-300 uppercase">{item.size}</td>
+                    <td className="p-2 text-center border-r border-stone-300">{item.quantity}</td>
+                    <td className="p-2 text-right border-r border-stone-300">₹{item.price}</td>
+                    <td className="p-2 text-right">₹{item.price * item.quantity}</td>
+                  </tr>
+                ))}
+                <tr className="font-bold border-t border-stone-300 text-stone-600 text-[10px]">
+                  <td colSpan={3} className="p-2 border-r border-stone-300"></td>
+                  <td className="p-2 text-right uppercase border-r border-stone-300">Shipping</td>
+                  <td className="p-2 text-right text-emerald-600 uppercase font-black">Free</td>
+                </tr>
+                <tr className="font-black text-xs border-t border-stone-300 uppercase text-black bg-stone-50">
+                  <td colSpan={3} className="p-2 border-r border-stone-300"></td>
+                  <td className="p-2 text-right border-r border-stone-300">Grand Total</td>
+                  <td className="p-2 text-right text-orange-600 text-sm">₹{selectedOrder.total_amount}</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+
+          {/* Footer block */}
+          <div className="flex justify-between items-end border-t border-dashed border-stone-300 pt-3 mt-4">
+            <div>
+              <p className="font-bold uppercase text-[8px] text-stone-400">Payment Terms</p>
+              <p className="font-extrabold uppercase text-[#111111] text-xs">{selectedOrder.payment_method}</p>
+              <p className="text-[10px] text-stone-500 mt-1 font-semibold">Thank you for ordering healthy date powder with Nutri Dates!</p>
+            </div>
+            <div className="text-center flex flex-col items-center">
+              <div className="border border-stone-300 w-28 h-8 flex items-center justify-center font-mono font-bold tracking-widest text-[8px] uppercase text-stone-400 mb-1 leading-none">
+                ||||| {selectedOrder.id} |||||
+              </div>
+              <p className="text-[8px] font-bold text-stone-400 uppercase">Authorized Signature</p>
+            </div>
           </div>
         </div>
       </div>
