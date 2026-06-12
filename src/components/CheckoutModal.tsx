@@ -21,6 +21,16 @@ interface FormErrors {
   state?: string;
 }
 
+const loadRazorpayScript = () => {
+  return new Promise((resolve) => {
+    const script = document.createElement('script');
+    script.src = 'https://checkout.razorpay.com/v1/checkout.js';
+    script.onload = () => resolve(true);
+    script.onerror = () => resolve(false);
+    document.body.appendChild(script);
+  });
+};
+
 export default function CheckoutModal({ isOpen, onClose }: CheckoutModalProps) {
   const router = useRouter();
   
@@ -208,20 +218,108 @@ export default function CheckoutModal({ isOpen, onClose }: CheckoutModalProps) {
       const order = resData.order;
 
       if (purchaseMethod === 'razorpay') {
-        // Simulate Razorpay Gateway steps
-        setProcessStep('Connecting to Razorpay Secure API...');
-        await new Promise((resolve) => setTimeout(resolve, 800));
-        
-        setProcessStep('Verifying payment connection...');
-        await new Promise((resolve) => setTimeout(resolve, 800));
-        
-        setProcessStep('Confirming transaction with bank...');
-        await new Promise((resolve) => setTimeout(resolve, 900));
+        setProcessStep('Initializing Razorpay Checkout...');
+        const res = await loadRazorpayScript();
+        if (!res) {
+          throw new Error('Failed to load Razorpay SDK. Please check your internet connection.');
+        }
 
-        // Clear the cart
-        clearCart();
-        // Redirect to thank-you with orderId
-        router.push(`/thank-you?orderId=${order.id}`);
+        // Create a Razorpay Order in our backend
+        const rpOrderRes = await fetch('/api/payments/razorpay-order', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ amount: totalPrice })
+        });
+        const rpOrderData = await rpOrderRes.json();
+        
+        if (!rpOrderRes.ok || !rpOrderData.success) {
+          throw new Error(rpOrderData.error || 'Failed to initialize payment gateway.');
+        }
+
+        if (rpOrderData.sandbox) {
+          // If in sandbox mode, simulate a successful payment
+          setProcessStep('Running in Razorpay Test Sandbox...');
+          await new Promise((resolve) => setTimeout(resolve, 800));
+          
+          setProcessStep('Simulating secure UPI verification...');
+          await new Promise((resolve) => setTimeout(resolve, 800));
+
+          // Call API to confirm order payment status
+          const confirmRes = await fetch(`/api/orders/${order.id}`, {
+            method: 'PATCH',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              status: 'confirmed',
+              note: 'Payment of ₹' + totalPrice + ' successfully completed via online Razorpay sandbox.',
+              payment_method: 'Online (Razorpay Sandbox Simulator)'
+            })
+          });
+
+          if (!confirmRes.ok) {
+            console.error('Failed to update sandbox order payment status');
+          }
+
+          clearCart();
+          router.push(`/thank-you?orderId=${order.id}`);
+        } else {
+          // Open real Razorpay options
+          setProcessStep('Awaiting secure payment...');
+          const options = {
+            key: rpOrderData.key_id,
+            amount: rpOrderData.amount,
+            currency: rpOrderData.currency,
+            name: 'Nutri Dates',
+            description: 'Date-Based Chocolate Nutrition Powder',
+            order_id: rpOrderData.id,
+            handler: async function (response: any) {
+              try {
+                setIsProcessing(true);
+                setProcessStep('Verifying payment details...');
+                
+                // Confirm the order status in our database
+                const confirmRes = await fetch(`/api/orders/${order.id}`, {
+                  method: 'PATCH',
+                  headers: { 'Content-Type': 'application/json' },
+                  body: JSON.stringify({
+                    status: 'confirmed',
+                    note: `Payment captured online via Razorpay. Txn ID: ${response.razorpay_payment_id}. Signature: verified.`,
+                    payment_method: `Online (Razorpay) - Txn: ${response.razorpay_payment_id}`
+                  })
+                });
+
+                if (!confirmRes.ok) {
+                  throw new Error('Payment succeeded but order confirmation failed. Please contact support.');
+                }
+
+                clearCart();
+                router.push(`/thank-you?orderId=${order.id}`);
+              } catch (err: any) {
+                alert(err.message);
+                setIsProcessing(false);
+              }
+            },
+            prefill: {
+              name: formData.fullName,
+              email: formData.email,
+              contact: formData.phone
+            },
+            notes: {
+              order_id: order.id,
+              local_order_id: order.id
+            },
+            theme: {
+              color: '#FF5000'
+            },
+            modal: {
+              ondismiss: function () {
+                setIsProcessing(false);
+              }
+            }
+          };
+
+          const rzp = new (window as any).Razorpay(options);
+          rzp.open();
+        }
       } else {
         // WhatsApp order
         setProcessStep('Formatting your order details...');

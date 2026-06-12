@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Inter } from "next/font/google";
 import "./globals.css";
 import { CartProvider } from "@/context/CartContext";
+import { db } from "@/lib/db";
 
 const inter = Inter({
   variable: "--font-sans",
@@ -186,11 +187,22 @@ const organizationJsonLd = {
   },
 };
 
-export default function RootLayout({
+export default async function RootLayout({
   children,
 }: Readonly<{
   children: React.ReactNode;
 }>) {
+  let settings = null;
+  try {
+    settings = await db.getSettings();
+  } catch (err) {
+    console.warn("Failed to fetch layout settings:", err);
+  }
+
+  const showBanner = settings?.banner_active && settings?.banner_text;
+  const bannerBg = settings?.banner_color || "#FF5000";
+  const bannerLink = settings?.banner_link;
+
   return (
     <html
       lang="en"
@@ -229,6 +241,21 @@ export default function RootLayout({
       </head>
       <body className="min-h-full flex flex-col bg-primary-bg">
         <CartProvider>
+          {showBanner && (
+            <div 
+              className="w-full text-center py-2 px-4 text-xs font-black uppercase tracking-wider text-white border-b-2 border-black z-50 select-none"
+              style={{ backgroundColor: bannerBg }}
+            >
+              {bannerLink ? (
+                <a href={bannerLink} className="hover:underline flex items-center justify-center gap-1.5">
+                  <span>{settings?.banner_text}</span>
+                  <span>⚡</span>
+                </a>
+              ) : (
+                <span>{settings?.banner_text}</span>
+              )}
+            </div>
+          )}
           {children}
         </CartProvider>
       </body>

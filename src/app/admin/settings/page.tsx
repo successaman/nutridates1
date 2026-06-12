@@ -23,9 +23,23 @@ export default function AdminSettingsPage() {
   const [whatsappTemplate, setWhatsappTemplate] = useState('');
   const [coupons, setCoupons] = useState<Coupon[]>([]);
 
+  // Customizer & Gateway settings states
+  const [bannerActive, setBannerActive] = useState(false);
+  const [bannerText, setBannerText] = useState('Limited Offer! Use code WELCOME10 for 10% off');
+  const [bannerColor, setBannerColor] = useState('#FF5000');
+  const [bannerLink, setBannerLink] = useState('');
+
+  const [razorpayEnabled, setRazorpayEnabled] = useState(false);
+  const [razorpayKeyId, setRazorpayKeyId] = useState('');
+  const [razorpayKeySecret, setRazorpayKeySecret] = useState('');
+
+  const [shiprocketEnabled, setShiprocketEnabled] = useState(false);
+  const [shiprocketEmail, setShiprocketEmail] = useState('');
+  const [shiprocketPassword, setShiprocketPassword] = useState('');
+
   const [dbStatus, setDbStatus] = useState<'checking' | 'supabase' | 'fallback'>('checking');
   const [updating, setUpdating] = useState(false);
-  const [activeTab, setActiveTab] = useState<'config' | 'coupons' | 'diagnostics'>('config');
+  const [activeTab, setActiveTab] = useState<'config' | 'coupons' | 'customizer' | 'diagnostics'>('config');
 
   // New coupon form state
   const [newCode, setNewCode] = useState('');
@@ -44,6 +58,19 @@ export default function AdminSettingsPage() {
           setWhatsappPhone(data.settings.whatsapp_phone || '917970574329');
           setSupportEmail(data.settings.support_email || 'hello@nutridates.in');
           setWhatsappTemplate(data.settings.whatsapp_template || '');
+          
+          setBannerActive(!!data.settings.banner_active);
+          setBannerText(data.settings.banner_text || 'Limited Offer! Use code WELCOME10 for 10% off');
+          setBannerColor(data.settings.banner_color || '#FF5000');
+          setBannerLink(data.settings.banner_link || '');
+          
+          setRazorpayEnabled(!!data.settings.razorpay_enabled);
+          setRazorpayKeyId(data.settings.razorpay_key_id || '');
+          setRazorpayKeySecret(data.settings.razorpay_key_secret || '');
+          
+          setShiprocketEnabled(!!data.settings.shiprocket_enabled);
+          setShiprocketEmail(data.settings.shiprocket_email || '');
+          setShiprocketPassword(data.settings.shiprocket_password || '');
         }
         if (data.coupons) {
           setCoupons(data.coupons || []);
@@ -98,7 +125,17 @@ export default function AdminSettingsPage() {
         body: JSON.stringify({
           whatsapp_phone: whatsappPhone,
           support_email: supportEmail,
-          whatsapp_template: whatsappTemplate
+          whatsapp_template: whatsappTemplate,
+          banner_active: bannerActive,
+          banner_text: bannerText,
+          banner_color: bannerColor,
+          banner_link: bannerLink,
+          razorpay_enabled: razorpayEnabled,
+          razorpay_key_id: razorpayKeyId,
+          razorpay_key_secret: razorpayKeySecret,
+          shiprocket_enabled: shiprocketEnabled,
+          shiprocket_email: shiprocketEmail,
+          shiprocket_password: shiprocketPassword
         })
       });
       const data = await res.json();
@@ -189,10 +226,10 @@ export default function AdminSettingsPage() {
       </div>
 
       {/* Tabs Menu */}
-      <div className="flex border-b-4 border-black gap-2">
+      <div className="flex border-b-4 border-black gap-2 overflow-x-auto scrollbar-thin">
         <button
           onClick={() => setActiveTab('config')}
-          className={`px-5 py-3 border-2 border-black border-b-0 rounded-t-lg text-xs font-black uppercase tracking-wider transition-all cursor-pointer ${
+          className={`px-5 py-3 border-2 border-black border-b-0 rounded-t-lg text-xs font-black uppercase tracking-wider transition-all cursor-pointer shrink-0 ${
             activeTab === 'config'
               ? 'bg-[#FF5000] text-white shadow-[2px_0px_0px_0px_#111111] translate-y-[4px]'
               : 'bg-white text-stone-600 hover:text-black'
@@ -201,8 +238,18 @@ export default function AdminSettingsPage() {
           ⚙️ Store Config
         </button>
         <button
+          onClick={() => setActiveTab('customizer')}
+          className={`px-5 py-3 border-2 border-black border-b-0 rounded-t-lg text-xs font-black uppercase tracking-wider transition-all cursor-pointer shrink-0 ${
+            activeTab === 'customizer'
+              ? 'bg-[#FF5000] text-white shadow-[2px_0px_0px_0px_#111111] translate-y-[4px]'
+              : 'bg-white text-stone-600 hover:text-black'
+          }`}
+        >
+          🎨 Customizer
+        </button>
+        <button
           onClick={() => setActiveTab('coupons')}
-          className={`px-5 py-3 border-2 border-black border-b-0 rounded-t-lg text-xs font-black uppercase tracking-wider transition-all cursor-pointer ${
+          className={`px-5 py-3 border-2 border-black border-b-0 rounded-t-lg text-xs font-black uppercase tracking-wider transition-all cursor-pointer shrink-0 ${
             activeTab === 'coupons'
               ? 'bg-[#FF5000] text-white shadow-[2px_0px_0px_0px_#111111] translate-y-[4px]'
               : 'bg-white text-stone-600 hover:text-black'
@@ -215,7 +262,7 @@ export default function AdminSettingsPage() {
             setActiveTab('diagnostics');
             runConnectionDiagnostics(true);
           }}
-          className={`px-5 py-3 border-2 border-black border-b-0 rounded-t-lg text-xs font-black uppercase tracking-wider transition-all cursor-pointer ${
+          className={`px-5 py-3 border-2 border-black border-b-0 rounded-t-lg text-xs font-black uppercase tracking-wider transition-all cursor-pointer shrink-0 ${
             activeTab === 'diagnostics'
               ? 'bg-[#FF5000] text-white shadow-[2px_0px_0px_0px_#111111] translate-y-[4px]'
               : 'bg-white text-stone-600 hover:text-black'
@@ -283,12 +330,181 @@ export default function AdminSettingsPage() {
                   </div>
                 </div>
 
+                {/* Razorpay Gateway Configurations */}
+                <div className="border-2 border-black rounded-xl p-4 bg-stone-50/50 space-y-4">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <h4 className="text-xs font-black uppercase tracking-wider text-black">💳 Razorpay PG Integration</h4>
+                      <p className="text-[9px] text-stone-500 font-bold uppercase mt-0.5">Collect credit cards, UPI, wallets online</p>
+                    </div>
+                    <label className="relative inline-flex items-center cursor-pointer select-none">
+                      <input 
+                        type="checkbox" 
+                        checked={razorpayEnabled} 
+                        onChange={(e) => setRazorpayEnabled(e.target.checked)} 
+                        className="sr-only peer"
+                      />
+                      <div className="w-9 h-5 bg-stone-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-stone-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-[#FF5000] border-2 border-black" />
+                      <span className="ml-2 text-[10px] font-black uppercase text-black">Enabled</span>
+                    </label>
+                  </div>
+                  {razorpayEnabled && (
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-2">
+                      <div>
+                        <label className="block text-[10px] font-black uppercase text-[#111111] mb-1">Razorpay Key ID</label>
+                        <input 
+                          type="text" 
+                          value={razorpayKeyId} 
+                          onChange={(e) => setRazorpayKeyId(e.target.value)} 
+                          className="w-full border-2 border-black rounded px-2.5 py-1.5 bg-white text-black font-semibold text-xs"
+                          placeholder="rzp_test_..."
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-[10px] font-black uppercase text-[#111111] mb-1">Razorpay Key Secret</label>
+                        <input 
+                          type="password" 
+                          value={razorpayKeySecret} 
+                          onChange={(e) => setRazorpayKeySecret(e.target.value)} 
+                          className="w-full border-2 border-black rounded px-2.5 py-1.5 bg-white text-black font-semibold text-xs"
+                          placeholder="••••••••••••••••"
+                        />
+                      </div>
+                    </div>
+                  )}
+                </div>
+
+                {/* Shiprocket Logistics Configurations */}
+                <div className="border-2 border-black rounded-xl p-4 bg-stone-50/50 space-y-4">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <h4 className="text-xs font-black uppercase tracking-wider text-black">📦 Shiprocket Logistics Automation</h4>
+                      <p className="text-[9px] text-stone-500 font-bold uppercase mt-0.5">Automated shipping label booking & rate fetch</p>
+                    </div>
+                    <label className="relative inline-flex items-center cursor-pointer select-none">
+                      <input 
+                        type="checkbox" 
+                        checked={shiprocketEnabled} 
+                        onChange={(e) => setShiprocketEnabled(e.target.checked)} 
+                        className="sr-only peer"
+                      />
+                      <div className="w-9 h-5 bg-stone-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-stone-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-[#FF5000] border-2 border-black" />
+                      <span className="ml-2 text-[10px] font-black uppercase text-black">Enabled</span>
+                    </label>
+                  </div>
+                  {shiprocketEnabled && (
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-2">
+                      <div>
+                        <label className="block text-[10px] font-black uppercase text-[#111111] mb-1">Shiprocket Email</label>
+                        <input 
+                          type="email" 
+                          value={shiprocketEmail} 
+                          onChange={(e) => setShiprocketEmail(e.target.value)} 
+                          className="w-full border-2 border-black rounded px-2.5 py-1.5 bg-white text-black font-semibold text-xs"
+                          placeholder="shipping@nutridates.in"
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-[10px] font-black uppercase text-[#111111] mb-1">Shiprocket Password</label>
+                        <input 
+                          type="password" 
+                          value={shiprocketPassword} 
+                          onChange={(e) => setShiprocketPassword(e.target.value)} 
+                          className="w-full border-2 border-black rounded px-2.5 py-1.5 bg-white text-black font-semibold text-xs"
+                          placeholder="••••••••••••••••"
+                        />
+                      </div>
+                    </div>
+                  )}
+                </div>
+
                 <button
                   type="submit"
                   disabled={updating}
                   className="bg-[#FF5000] text-white border-2 border-black rounded-lg px-5 py-3 text-xs font-black uppercase tracking-widest cursor-pointer shadow-[3px_3px_0px_0px_#111111] disabled:opacity-75"
                 >
                   {updating ? 'Saving...' : '💾 Save Settings'}
+                </button>
+              </form>
+            </div>
+          )}
+
+          {activeTab === 'customizer' && (
+            <div className="border-4 border-black bg-white rounded-xl shadow-[6px_6px_0px_0px_#111111] p-6 space-y-6">
+              <h3 className="text-xs font-black uppercase tracking-widest text-[#FF5000] border-b-2 border-black pb-3">
+                🎨 Storefront Banner Customizer
+              </h3>
+
+              <form onSubmit={handleSaveSettings} className="space-y-5">
+                <div className="flex items-center justify-between border-2 border-black rounded-lg p-4 bg-[#FBF9F6]">
+                  <div>
+                    <span className="text-xs font-black uppercase text-black">Active Promo Banner</span>
+                    <p className="text-[9px] text-stone-500 font-bold uppercase mt-0.5">Show or hide the promo announcement banner at the top of the site</p>
+                  </div>
+                  <label className="relative inline-flex items-center cursor-pointer select-none">
+                    <input 
+                      type="checkbox" 
+                      checked={bannerActive} 
+                      onChange={(e) => setBannerActive(e.target.checked)} 
+                      className="sr-only peer"
+                    />
+                    <div className="w-9 h-5 bg-stone-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-stone-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-[#FF5000] border-2 border-black" />
+                    <span className="ml-2 text-[10px] font-black uppercase text-black">Active</span>
+                  </label>
+                </div>
+
+                <div>
+                  <label className="block text-xs font-black uppercase text-black mb-2">
+                    Banner Announcement Text
+                  </label>
+                  <input 
+                    type="text"
+                    value={bannerText}
+                    onChange={(e) => setBannerText(e.target.value)}
+                    className="w-full border-2 border-black rounded-lg px-4 py-2.5 text-xs bg-white text-black font-semibold focus:outline-hidden focus:border-[#FF5000]"
+                    placeholder="e.g. SUMMER BATCH OUT NOW! USE CODE NUTRIDATES10 FOR 10% OFF"
+                    required
+                  />
+                </div>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-xs font-black uppercase text-black mb-2">
+                      Banner Color Theme
+                    </label>
+                    <select
+                      value={bannerColor}
+                      onChange={(e) => setBannerColor(e.target.value)}
+                      className="w-full border-2 border-black rounded-lg px-4 py-2.5 text-xs bg-white text-black font-extrabold focus:outline-hidden focus:border-[#FF5000]"
+                    >
+                      <option value="#FF5000">Orange (#FF5000)</option>
+                      <option value="#2B1D14">Dark Chocolate (#2B1D14)</option>
+                      <option value="#3B82F6">Blue (#3B82F6)</option>
+                      <option value="#10B981">Green (#10B981)</option>
+                      <option value="#FBBF24">Yellow (#FBBF24)</option>
+                    </select>
+                  </div>
+
+                  <div>
+                    <label className="block text-xs font-black uppercase text-black mb-2">
+                      Banner Target Link (Optional)
+                    </label>
+                    <input 
+                      type="text"
+                      value={bannerLink}
+                      onChange={(e) => setBannerLink(e.target.value)}
+                      className="w-full border-2 border-black rounded-lg px-4 py-2.5 text-xs bg-white text-black font-semibold focus:outline-hidden focus:border-[#FF5000]"
+                      placeholder="e.g. #checkout or /blog/..."
+                    />
+                  </div>
+                </div>
+
+                <button
+                  type="submit"
+                  disabled={updating}
+                  className="bg-[#FF5000] text-white border-2 border-black rounded-lg px-5 py-3 text-xs font-black uppercase tracking-widest cursor-pointer shadow-[3px_3px_0px_0px_#111111] disabled:opacity-75"
+                >
+                  {updating ? 'Saving...' : '💾 Save Customizer'}
                 </button>
               </form>
             </div>

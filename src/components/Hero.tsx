@@ -60,48 +60,65 @@ export default function Hero() {
     >
       {/* ─── Header Navigation Bar ─── */}
       <div className="w-full border-b border-stone-200 bg-[#FBF9F6] z-20">
-        <div className="mx-auto max-w-7xl flex items-center justify-between px-6 py-4 md:px-12">
+        <div className="mx-auto max-w-7xl flex items-center justify-between px-4 py-3 sm:px-6 sm:py-4 md:px-12">
           {/* Logo & Brand Name */}
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-2 sm:gap-3">
             <Image
               src="/images/logo-uploaded.jpg"
               alt="Nutri Dates Logo"
-              width={50}
-              height={50}
+              width={40}
+              height={40}
               priority
-              className="rounded-lg object-contain border border-stone-200 shadow-xs"
+              className="rounded-lg object-contain border border-stone-200 shadow-xs h-10 w-10 sm:h-12 sm:w-12"
             />
             <div className="flex flex-col text-left">
-              <span className="text-lg font-black tracking-tighter text-[#111111] leading-none uppercase">
+              <span className="text-sm sm:text-lg font-black tracking-tighter text-[#111111] leading-none uppercase">
                 Nutri Dates
               </span>
-              <span className="text-[9px] font-bold tracking-widest text-[#FF5000] uppercase mt-1">
+              <span className="text-[8px] sm:text-[9px] font-bold tracking-widest text-[#FF5000] uppercase mt-0.5 sm:mt-1">
                 Sip The Strength
               </span>
             </div>
           </div>
           
           {/* Actions: Cart & Instagram */}
-          <div className="flex items-center gap-3">
-            {/* Cart Icon Button */}
+          <div className="flex items-center gap-2 sm:gap-3">
+            {/* Cart Icon Button - Shopify Style on Mobile */}
             <button
               onClick={() => setIsCartOpen(true)}
-              className="flex items-center gap-2 rounded-lg border-2 border-black px-4 py-2 text-xs font-black uppercase tracking-wider text-black bg-white shadow-[2px_2px_0px_0px_#111111] hover:bg-[#FF5000] hover:text-white transition-colors cursor-pointer"
+              className="relative flex items-center justify-center rounded-lg border-2 border-black p-2 text-black bg-white shadow-[2px_2px_0px_0px_#111111] hover:bg-[#FF5000] hover:text-white transition-colors cursor-pointer sm:px-4 sm:py-2 sm:text-xs sm:font-black sm:uppercase sm:tracking-wider sm:gap-2"
+              aria-label="Open Cart"
             >
-              🛒 Cart
+              {/* Shopping Bag SVG Icon */}
+              <svg
+                className="h-5 w-5 sm:h-4 sm:w-4"
+                fill="none"
+                viewBox="0 0 24 24"
+                stroke="currentColor"
+                strokeWidth="2.5"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z"
+                />
+              </svg>
+              <span className="hidden sm:inline">Cart</span>
+              
+              {/* Cart Count Badge */}
               {cartCount > 0 && (
-                <span className="bg-[#FF5000] text-white border border-black text-[10px] px-1.5 py-0.5 rounded-md leading-none ml-1">
+                <span className="absolute -top-1.5 -right-1.5 bg-[#FF5000] text-white border-2 border-black text-[9px] font-black w-5 h-5 flex items-center justify-center rounded-full leading-none sm:static sm:w-auto sm:h-auto sm:px-1.5 sm:py-0.5 sm:rounded-md sm:border sm:text-[10px] sm:ml-0">
                   {cartCount}
                 </span>
               )}
             </button>
 
-            {/* Instagram Button */}
+            {/* Instagram Button - Hidden on mobile, visible on sm and up */}
             <a
               href={instagramUrl}
               target="_blank"
               rel="noopener noreferrer"
-              className="flex items-center gap-2 rounded-lg border-2 border-black px-4 py-2 text-xs font-black uppercase tracking-wider text-black bg-white shadow-[2px_2px_0px_0px_#111111] hover:bg-[#FF5000] hover:text-white transition-colors cursor-pointer"
+              className="hidden sm:flex items-center gap-2 rounded-lg border-2 border-black px-4 py-2 text-xs font-black uppercase tracking-wider text-black bg-white shadow-[2px_2px_0px_0px_#111111] hover:bg-[#FF5000] hover:text-white transition-colors cursor-pointer"
             >
               <svg
                 className="h-4 w-4"

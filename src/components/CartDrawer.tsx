@@ -30,18 +30,7 @@ export default function CartDrawer() {
     };
   }, [isCartOpen]);
 
-  const hasShaker = cart.some((item) => item.id === 'prod_shaker');
 
-  const handleAddShakerUpsell = () => {
-    addToCart({
-      id: 'prod_shaker',
-      name: 'Premium Shaker Bottle',
-      price: 149,
-      quantity: 1,
-      size: 'Standard',
-      image: '/images/lifestyle-milkshake.png',
-    });
-  };
 
   const handleCheckoutClick = () => {
     setIsCartOpen(false);
@@ -174,28 +163,7 @@ export default function CartDrawer() {
                     ))}
                   </div>
 
-                  {/* Shaker Bottle Upsell Card */}
-                  {!hasShaker && (
-                    <div className="border-2 border-dashed border-[#FF5000] bg-[#FF5000]/5 rounded-xl p-4 space-y-3 shadow-[2px_2px_0px_0px_rgba(255,80,0,0.1)]">
-                      <div className="flex gap-3">
-                        <span className="text-xl">🥤</span>
-                        <div className="flex-1 min-w-0">
-                          <h4 className="text-xs font-black uppercase text-black">
-                            Complete Your Milkshake Setup!
-                          </h4>
-                          <p className="text-[10px] font-semibold text-stone-600 leading-normal mt-0.5">
-                            Add a leakproof, BPA-free Premium Shaker Bottle with blending whisk for just ₹149.
-                          </p>
-                        </div>
-                      </div>
-                      <button
-                        onClick={handleAddShakerUpsell}
-                        className="w-full bg-[#FF5000] hover:bg-black text-white border-2 border-black rounded-lg py-2 text-xs font-black uppercase tracking-wider cursor-pointer shadow-[2px_2px_0px_0px_#111111] transition-all"
-                      >
-                        ➕ Add Shaker (₹149)
-                      </button>
-                    </div>
-                  )}
+
                 </>
               )}
             </div>

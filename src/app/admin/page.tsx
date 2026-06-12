@@ -20,9 +20,12 @@ export default function AdminDashboardPage() {
   const [generating, setGenerating] = useState(false);
   const [resetting, setResetting] = useState(false);
   const [stats, setStats] = useState({
-    totalSales: 0,
+    grossSales: 0,
+    netSales: 0,
+    cancelledSales: 0,
     totalOrders: 0,
     pendingOrders: 0,
+    cancelledCount: 0,
     aov: 0
   });
 
@@ -48,15 +51,24 @@ export default function AdminDashboardPage() {
 
   const calculateStats = (orderList: Order[]) => {
     const activeOrders = orderList.filter(o => o.status !== 'cancelled');
-    const totalSales = activeOrders.reduce((sum, o) => sum + Number(o.total_amount), 0);
+    const netOrders = orderList.filter(o => o.status === 'confirmed' || o.status === 'shipped' || o.status === 'delivered');
+    const cancelledOrders = orderList.filter(o => o.status === 'cancelled');
+
+    const grossSales = activeOrders.reduce((sum, o) => sum + Number(o.total_amount), 0);
+    const netSales = netOrders.reduce((sum, o) => sum + Number(o.total_amount), 0);
+    const cancelledSales = cancelledOrders.reduce((sum, o) => sum + Number(o.total_amount), 0);
     const totalOrders = orderList.length;
     const pendingOrders = orderList.filter(o => o.status === 'pending').length;
-    const aov = activeOrders.length > 0 ? totalSales / activeOrders.length : 0;
+    const cancelledCount = cancelledOrders.length;
+    const aov = activeOrders.length > 0 ? grossSales / activeOrders.length : 0;
 
     setStats({
-      totalSales,
+      grossSales,
+      netSales,
+      cancelledSales,
       totalOrders,
       pendingOrders,
+      cancelledCount,
       aov
     });
   };
@@ -181,7 +193,7 @@ export default function AdminDashboardPage() {
               <div>
                 <span className="text-[10px] font-black uppercase text-stone-400 tracking-widest">Total Sales</span>
                 <p className="text-3xl font-black uppercase tracking-tight text-[#FF5000] mt-2">
-                  ₹{stats.totalSales.toLocaleString('en-IN')}
+                  ₹{stats.grossSales.toLocaleString('en-IN')}
                 </p>
               </div>
               <span className="text-[10px] font-bold text-stone-500 mt-4 uppercase">Excludes Cancelled Orders</span>

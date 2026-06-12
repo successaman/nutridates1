@@ -49,6 +49,19 @@ export interface StoreSettings {
   whatsapp_phone: string;
   support_email: string;
   whatsapp_template?: string;
+  // Dynamic Announcement Banner
+  banner_active?: boolean;
+  banner_text?: string;
+  banner_color?: string;
+  banner_link?: string;
+  // Razorpay Gateway Settings
+  razorpay_enabled?: boolean;
+  razorpay_key_id?: string;
+  razorpay_key_secret?: string;
+  // Shiprocket Shipping Settings
+  shiprocket_enabled?: boolean;
+  shiprocket_email?: string;
+  shiprocket_password?: string;
 }
 
 // Interface definition for Product Size
@@ -94,16 +107,6 @@ const DEFAULT_PRODUCTS: Product[] = [
       { size: '250g', price: 299, original_price: 349, in_stock: true },
       { size: '500g', price: 549, original_price: 699, in_stock: true },
       { size: '1kg', price: 999, original_price: 1299, in_stock: true }
-    ],
-    stock_status: 'in_stock',
-    created_at: new Date().toISOString()
-  },
-  {
-    id: 'prod_shaker',
-    name: 'Premium Shaker Bottle',
-    description: 'Leakproof, BPA-Free 600ml shaker bottle with metal blending whisk for perfect date milkshakes.',
-    sizes: [
-      { size: 'Standard', price: 149, original_price: 199, in_stock: true }
     ],
     stock_status: 'in_stock',
     created_at: new Date().toISOString()
